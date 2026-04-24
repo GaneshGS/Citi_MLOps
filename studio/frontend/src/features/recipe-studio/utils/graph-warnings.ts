@@ -31,6 +31,12 @@ function checkDataSourceRequired(allConfigs: NodeConfig[]): GraphWarning[] {
 }
 
 function checkLlmModelAlias(allConfigs: NodeConfig[]): GraphWarning[] {
+  const gsspMode = allConfigs.some(
+    (config) => config.kind === "seed" && config.gssp_enabled === true,
+  );
+  if (gsspMode) {
+    return [];
+  }
   const warnings: GraphWarning[] = [];
   for (const config of allConfigs) {
     if (config.kind === "llm" && !config.model_alias?.trim()) {
@@ -46,6 +52,12 @@ function checkLlmModelAlias(allConfigs: NodeConfig[]): GraphWarning[] {
 }
 
 function checkModelConfigProvider(allConfigs: NodeConfig[]): GraphWarning[] {
+  const gsspMode = allConfigs.some(
+    (config) => config.kind === "seed" && config.gssp_enabled === true,
+  );
+  if (gsspMode) {
+    return [];
+  }
   const warnings: GraphWarning[] = [];
   for (const config of allConfigs) {
     if (config.kind === "model_config" && !config.provider?.trim()) {

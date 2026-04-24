@@ -8,7 +8,7 @@ interface SectionCardProps {
   icon: ReactNode;
   title: string;
   description: string;
-  accent?: "emerald" | "indigo" | "orange" | "blue";
+  accent?: "primary" | "indigo" | "orange" | "blue";
   featured?: boolean;
   className?: string;
   badge?: string;
@@ -17,10 +17,10 @@ interface SectionCardProps {
 }
 
 const accentStyles = {
-  emerald: {
-    border: "ring-emerald-500/20",
+  primary: {
+    border: "ring-primary/20",
     iconBox:
-      "ring-emerald-200 bg-emerald-50 text-emerald-600 dark:ring-emerald-800 dark:bg-emerald-950 dark:text-emerald-400",
+      "ring-primary/25 bg-primary/10 text-primary dark:ring-primary/40 dark:bg-primary/15 dark:text-primary",
   },
   indigo: {
     border: "ring-indigo-500/20",
@@ -43,7 +43,7 @@ export function SectionCard({
   icon,
   title,
   description,
-  accent = "emerald",
+  accent = "primary",
   featured,
   className,
   badge,
@@ -61,7 +61,7 @@ export function SectionCard({
       )}
     >
       {featured && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-emerald-500/[0.04] to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-primary/10 to-transparent" />
       )}
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -77,7 +77,7 @@ export function SectionCard({
           <div className="flex items-center gap-2 pb-1">
             <h3 className="text-sm font-semibold">{title}</h3>
             {badge && (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+              <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-semibold text-primary dark:bg-primary/20 dark:text-primary">
                 {badge}
               </span>
             )}

@@ -1,16 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright 2026-present the Unsloth AI Inc. team. All rights reserved. See /studio/LICENSE.AGPL-3.0
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -19,23 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { usePlatformStore } from "@/config/env";
-import {
-  type ScanFolderInfo,
-  addScanFolder,
-  deleteCachedModel,
-  listCachedGguf,
-  listCachedModels,
-  listGgufVariants,
-  listLocalModels,
-  listRecommendedFolders,
-  listScanFolders,
-  removeScanFolder,
-} from "@/features/chat/api/chat-api";
-import type {
-  CachedGgufRepo,
-  CachedModelRepo,
-  LocalModelInfo,
-} from "@/features/chat/api/chat-api";
+import { listGgufVariants } from "@/features/chat/api/chat-api";
 import type { GgufVariantDetail } from "@/features/chat/types/api";
 import {
   useDebouncedValue,
@@ -47,10 +21,9 @@ import {
 import { cn, formatCompact } from "@/lib/utils";
 import type { VramFitStatus } from "@/lib/vram";
 import { checkVramFit, estimateLoadingVram } from "@/lib/vram";
-import { Add01Icon, Cancel01Icon, Folder02Icon, Search01Icon } from "@hugeicons/core-free-icons";
+import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { FolderBrowser } from "./folder-browser";
-import { ChevronDownIcon, ChevronRightIcon, DownloadIcon, StarIcon, Trash2Icon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, StarIcon, Trash2Icon } from "lucide-react";
 import {
   type ReactNode,
   useCallback,
@@ -58,7 +31,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { toast } from "sonner";
 import type {
   LoraModelOption,
   ModelOption,
@@ -382,7 +354,7 @@ function GgufVariantExpander({
               <span className="min-w-0 flex-1 truncate font-mono text-xs">
                 <span className={cn(oom && "!text-gray-500 dark:!text-gray-400")}>{v.quant}</span>
                 {v.downloaded ? (
-                  <span className="ml-1.5 text-[9px] font-sans font-medium text-green-400">
+                  <span className="ml-1.5 text-[9px] font-sans font-medium text-primary">
                     downloaded
                   </span>
                 ) : v.quant === effectiveRecommended ? (
@@ -444,36 +416,17 @@ function extractParamLabel(id: string): string | undefined {
   return match ? `${match[1]}B` : undefined;
 }
 
-// Module-level caches so re-mounting the popover shows results instantly
-let _cachedGgufCache: CachedGgufRepo[] = [];
-let _cachedModelsCache: CachedModelRepo[] = [];
-let _lmStudioCache: LocalModelInfo[] = [];
-let _customFolderCache: LocalModelInfo[] = [];
-let _scanFoldersCache: ScanFolderInfo[] = [];
-
-/** Sort LM Studio models with unsloth publisher first. */
-function sortLmStudio(models: LocalModelInfo[]): LocalModelInfo[] {
-  return [...models].sort((a, b) => {
-    const aUnsloth = (a.model_id ?? "").startsWith("unsloth/") ? 0 : 1;
-    const bUnsloth = (b.model_id ?? "").startsWith("unsloth/") ? 0 : 1;
-    if (aUnsloth !== bUnsloth) return aUnsloth - bUnsloth;
-    return (a.model_id ?? a.display_name).localeCompare(
-      b.model_id ?? b.display_name,
-    );
-  });
-}
-
-// ── Hub Model Picker ──────────────────────────────────────────
+// ── Base model (cloud) picker ─────────────────────────────────
 
 export function HubModelPicker({
   models,
   value,
   onSelect,
-  onFoldersChange,
 }: {
   models: ModelOption[];
   value?: string;
   onSelect: (id: string, meta: ModelSelectorChangeMeta) => void;
+  /** Kept for API compatibility with ``ModelSelector``; scan-folder refresh removed */
   onFoldersChange?: () => void;
 }) {
   const gpu = useGpuInfo();
@@ -511,199 +464,9 @@ export function HubModelPicker({
 
   // Track which GGUF repo is expanded for variant selection
   const [expandedGguf, setExpandedGguf] = useState<string | null>(null);
-
-  // Delete confirmation dialog state
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [downloadedCollapsed, setDownloadedCollapsed] = useState(false);
-  const [customFoldersCollapsed, setCustomFoldersCollapsed] = useState(false);
   const [recommendedCollapsed, setRecommendedCollapsed] = useState(false);
 
-  // Cached (already downloaded) repos -- use module-level cache so
-  // re-mounting the popover does not flash an empty "Downloaded" section.
-  const [cachedGguf, setCachedGguf] =
-    useState<CachedGgufRepo[]>(_cachedGgufCache);
-  const [cachedModels, setCachedModels] =
-    useState<CachedModelRepo[]>(_cachedModelsCache);
-  const alreadyCached =
-    _cachedGgufCache.length > 0 || _cachedModelsCache.length > 0;
-  const [cachedReady, setCachedReady] = useState(alreadyCached);
-
-  // LM Studio local models -- module-level cache so re-mounting the
-  // popover does not flash an empty section (same pattern as GGUF/models).
-  const [lmStudioModels, setLmStudioModels] =
-    useState<LocalModelInfo[]>(_lmStudioCache);
-  const [customFolderModels, setCustomFolderModels] =
-    useState<LocalModelInfo[]>(_customFolderCache);
-
-  // Custom scan folders management
-  const [scanFolders, setScanFolders] = useState<ScanFolderInfo[]>(_scanFoldersCache);
-  const [folderInput, setFolderInput] = useState("");
-  const [folderError, setFolderError] = useState<string | null>(null);
-  const [showFolderInput, setShowFolderInput] = useState(false);
-  const [folderLoading, setFolderLoading] = useState(false);
-  const [showFolderBrowser, setShowFolderBrowser] = useState(false);
-  const [recommendedFolders, setRecommendedFolders] = useState<string[]>([]);
-
-  const refreshLocalModelsList = useCallback(() => {
-    listLocalModels()
-      .then((res) => {
-        const lm = sortLmStudio(
-          res.models.filter((m) => m.source === "lmstudio"),
-        );
-        _lmStudioCache = lm;
-        setLmStudioModels(lm);
-        const cf = res.models.filter((m) => m.source === "custom");
-        _customFolderCache = cf;
-        setCustomFolderModels(cf);
-      })
-      .catch(() => {});
-  }, []);
-
-  const refreshScanFolders = useCallback(() => {
-    listScanFolders()
-      .then((v) => {
-        _scanFoldersCache = v;
-        setScanFolders(v);
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleAddFolder = useCallback(async (overridePath?: string) => {
-    // Accept an explicit path so the folder browser can submit the
-    // chosen path in the same tick it calls `setFolderInput`; reading
-    // `folderInput` alone would race the state update.
-    const raw = overridePath !== undefined ? overridePath : folderInput;
-    const trimmed = raw.trim();
-    if (!trimmed || folderLoading) return;
-    setFolderError(null);
-    setFolderLoading(true);
-    // True when the request originated from the folder browser's
-    // ``onSelect`` (one-click "Use this folder"). In that flow the
-    // typed-input panel is closed, so the inline ``folderError``
-    // paragraph is invisible. Surface failures via toast instead so
-    // the action doesn't appear to silently no-op when the backend
-    // rejects (denylisted path, sandbox 403, etc.).
-    const fromBrowser = overridePath !== undefined;
-    try {
-      const created = await addScanFolder(trimmed);
-      // Backend returns existing row for duplicates, so deduplicate
-      const next = _scanFoldersCache.some((f) => f.id === created.id || f.path === created.path)
-        ? _scanFoldersCache
-        : [..._scanFoldersCache, created];
-      _scanFoldersCache = next;
-      setScanFolders(next);
-      setFolderInput("");
-      setShowFolderInput(false);
-      refreshLocalModelsList();
-      onFoldersChange?.();
-      // Background reconciliation with the server
-      void refreshScanFolders();
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Failed to add folder";
-      setFolderError(message);
-      if (fromBrowser) {
-        toast.error("Couldn't add folder", { description: message });
-      }
-    } finally {
-      setFolderLoading(false);
-    }
-  }, [folderInput, folderLoading, refreshScanFolders, refreshLocalModelsList, onFoldersChange]);
-
-  const handleRemoveFolder = useCallback(async (id: number) => {
-    try {
-      await removeScanFolder(id);
-      // Optimistic update so the folder disappears immediately
-      const next = _scanFoldersCache.filter((f) => f.id !== id);
-      _scanFoldersCache = next;
-      setScanFolders(next);
-      refreshScanFolders();
-      refreshLocalModelsList();
-      onFoldersChange?.();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to remove folder");
-      refreshScanFolders();
-    }
-  }, [refreshScanFolders, refreshLocalModelsList, onFoldersChange]);
-
-  const refreshCachedLists = useCallback(() => {
-    listCachedGguf()
-      .then((v) => {
-        _cachedGgufCache = v;
-        setCachedGguf(v);
-      })
-      .catch(() => {});
-    listCachedModels()
-      .then((v) => {
-        _cachedModelsCache = v;
-        setCachedModels(v);
-      })
-      .catch(() => {});
-    refreshLocalModelsList();
-  }, [refreshLocalModelsList]);
-
-  useEffect(() => {
-    // Always refresh LM Studio + custom folder models (not gated by alreadyCached)
-    refreshLocalModelsList();
-    refreshScanFolders();
-    listRecommendedFolders()
-      .then(setRecommendedFolders)
-      .catch(() => {});
-
-    // Always refetch cached GGUF/model lists. The module-level caches give
-    // an instant render with stale data (no spinner flash), but newly
-    // downloaded repos won't appear unless we re-hit the backend on every
-    // mount.  Initial state already has cachedReady=alreadyCached, so the
-    // background refresh is invisible when we already had data.
-    let done = 0;
-    const check = () => {
-      if (++done >= 2) setCachedReady(true);
-    };
-    listCachedGguf()
-      .then((v) => {
-        _cachedGgufCache = v;
-        setCachedGguf(v);
-      })
-      .catch(() => {})
-      .finally(check);
-    listCachedModels()
-      .then((v) => {
-        _cachedModelsCache = v;
-        setCachedModels(v);
-      })
-      .catch(() => {})
-      .finally(check);
-  }, [refreshLocalModelsList, refreshScanFolders]);
-
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      // deleteTarget is "repo_id" or "repo_id::variant"
-      const sepIdx = deleteTarget.indexOf("::");
-      const repoId = sepIdx >= 0 ? deleteTarget.slice(0, sepIdx) : deleteTarget;
-      const variant = sepIdx >= 0 ? deleteTarget.slice(sepIdx + 2) : undefined;
-      await deleteCachedModel(repoId, variant);
-      toast.success(`Deleted ${variant ? `${repoId} ${variant}` : repoId}`);
-      refreshCachedLists();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete model",
-      );
-    } finally {
-      setDeleting(false);
-      setDeleteTarget(null);
-    }
-  }, [deleteTarget, refreshCachedLists]);
-
-  // Deduplicate: don't show downloaded models in the recommended list.
-  // Compare case-insensitively since HF cache lowercases repo IDs.
-  const downloadedSet = useMemo(() => {
-    const s = new Set<string>();
-    for (const c of cachedGguf) s.add(c.repo_id.toLowerCase());
-    for (const c of cachedModels) s.add(c.repo_id.toLowerCase());
-    return s;
-  }, [cachedGguf, cachedModels]);
+  const downloadedSet = useMemo(() => new Set<string>(), []);
 
   const chatOnly = usePlatformStore((s) => s.isChatOnly());
 
@@ -905,7 +668,7 @@ export function HubModelPicker({
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search Hugging Face models"
+          placeholder="Search Cloud Based Models"
           className="h-9 pl-8 pr-8"
         />
         {isLoading && (
@@ -915,332 +678,7 @@ export function HubModelPicker({
 
       <div ref={scrollRef} className="max-h-64 overflow-y-auto">
         <div className="p-1">
-          {!cachedReady && !showHfSection ? (
-            <div className="flex items-center gap-2 px-5 py-3">
-              <Spinner className="size-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                Loading models…
-              </span>
-            </div>
-          ) : !showHfSection &&
-            (cachedGguf.length > 0 ||
-              (!chatOnly && cachedModels.length > 0)) ? (
-            <>
-              <ListLabel
-                icon={<DownloadIcon className="size-3" />}
-                collapsed={downloadedCollapsed}
-                onToggle={() => setDownloadedCollapsed((v) => !v)}
-              >Downloaded</ListLabel>
-              {!downloadedCollapsed && cachedGguf.map((c) => (
-                <div key={c.repo_id}>
-                  <ModelRow
-                    label={c.repo_id}
-                    meta={`GGUF · ${formatBytes(c.size_bytes)}`}
-                    selected={value === c.repo_id}
-                    onClick={() =>
-                      setExpandedGguf((prev) =>
-                        prev === c.repo_id ? null : c.repo_id,
-                      )
-                    }
-                    vramStatus={null}
-                  />
-                  {expandedGguf === c.repo_id && (
-                    <GgufVariantExpander
-                      repoId={c.repo_id}
-                      onSelect={onSelect}
-                      gpuGb={gpu.available ? gpu.memoryTotalGb : undefined}
-                      systemRamGb={
-                        gpu.available ? gpu.systemRamAvailableGb : undefined
-                      }
-                      onDeleteVariant={(quant) =>
-                        setDeleteTarget(`${c.repo_id}::${quant}`)
-                      }
-                    />
-                  )}
-                </div>
-              ))}
-              {!downloadedCollapsed && !chatOnly &&
-                cachedModels.map((c) => (
-                  <div key={c.repo_id} className="flex items-center gap-0.5">
-                    <div className="min-w-0 flex-1">
-                      <ModelRow
-                        label={c.repo_id}
-                        meta={formatBytes(c.size_bytes)}
-                        selected={value === c.repo_id}
-                        onClick={() =>
-                          onSelect(c.repo_id, {
-                            source: "hub",
-                            isLora: false,
-                            isDownloaded: true,
-                          })
-                        }
-                        vramStatus={null}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteTarget(c.repo_id);
-                      }}
-                      className="shrink-0 rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2Icon className="size-3.5" />
-                    </button>
-                  </div>
-                ))}
-            </>
-          ) : null}
-
-          {!showHfSection && chatOnly && lmStudioModels.length > 0 ? (
-            <>
-              <ListLabel>LM Studio</ListLabel>
-              {lmStudioModels.map((m) => {
-                const isGguf = isGgufRepo(m.id) || isGgufRepo(m.display_name);
-                return (
-                  <div key={m.id}>
-                    <ModelRow
-                      label={m.model_id ?? m.display_name}
-                      meta={
-                        isGguf || m.path.toLowerCase().endsWith(".gguf") ? "GGUF" : "Local"
-                      }
-                      selected={value === m.id}
-                      onClick={() => {
-                        if (isGguf) {
-                          setExpandedGguf((prev) =>
-                            prev === m.id ? null : m.id,
-                          );
-                        } else {
-                          onSelect(m.id, {
-                            source: "local",
-                            isLora: false,
-                            isDownloaded: true,
-                          });
-                        }
-                      }}
-                      vramStatus={null}
-                    />
-                    {expandedGguf === m.id && (
-                      <GgufVariantExpander
-                        repoId={m.id}
-                        onSelect={onSelect}
-                        gpuGb={gpu.available ? gpu.memoryTotalGb : undefined}
-                        systemRamGb={
-                          gpu.available ? gpu.systemRamAvailableGb : undefined
-                        }
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </>
-          ) : null}
-
           {!showHfSection ? (
-            <>
-              <div className="flex items-center gap-1 px-2.5 py-1.5">
-                <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <HugeiconsIcon icon={Folder02Icon} className="size-3" />
-                  Custom Folders
-                </span>
-                <div className="flex items-center gap-0.5">
-                  <button
-                    type="button"
-                    aria-label={showFolderInput ? "Cancel adding folder" : "Add scan folder by path"}
-                    title={showFolderInput ? "Cancel" : "Add by typing a path"}
-                    onClick={() => {
-                      setShowFolderInput((open) => {
-                        if (open) { setFolderInput(""); setFolderError(null); }
-                        return !open;
-                      });
-                    }}
-                    className="shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground"
-                  >
-                    <HugeiconsIcon icon={showFolderInput ? Cancel01Icon : Add01Icon} className="size-3" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Browse for a folder on the server"
-                    title="Browse folders on the server"
-                    onClick={() => setShowFolderBrowser(true)}
-                    className="shrink-0 rounded p-0.5 text-muted-foreground/60 transition-colors hover:text-foreground"
-                  >
-                    <HugeiconsIcon icon={Search01Icon} className="size-2.5" />
-                  </button>
-                </div>
-                <div className="ml-auto">
-                  <button
-                    type="button"
-                    aria-label={customFoldersCollapsed ? "Expand custom folders" : "Collapse custom folders"}
-                    title={customFoldersCollapsed ? "Expand" : "Collapse"}
-                    onClick={() => setCustomFoldersCollapsed((v) => !v)}
-                    className="shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground"
-                  >
-                    {customFoldersCollapsed
-                      ? <ChevronRightIcon className="size-3" />
-                      : <ChevronDownIcon className="size-3" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Folder paths */}
-              {!customFoldersCollapsed && scanFolders.map((f) => (
-                <div
-                  key={f.id}
-                  className="group flex items-center gap-1.5 px-2.5 py-0.5"
-                >
-                  <HugeiconsIcon icon={Folder02Icon} className="size-3 shrink-0 text-muted-foreground/40" />
-                  <span
-                    className="min-w-0 flex-1 truncate font-mono text-[10px] text-muted-foreground/70"
-                    title={f.path}
-                  >
-                    {f.path}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFolder(f.id)}
-                    aria-label={`Remove folder ${f.path}`}
-                    className="shrink-0 rounded p-1 text-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:bg-destructive/10 focus-visible:text-destructive"
-                  >
-                    <HugeiconsIcon icon={Cancel01Icon} className="size-3" />
-                  </button>
-                </div>
-              ))}
-
-              {/* Recommended folders */}
-              {!customFoldersCollapsed && (() => {
-                const registered = new Set(scanFolders.map((f) => f.path));
-                const unregistered = recommendedFolders.filter((p) => !registered.has(p));
-                if (unregistered.length === 0) return null;
-                return (
-                  <div className="flex flex-wrap gap-1 px-2.5 pb-0.5">
-                    {unregistered.map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => void handleAddFolder(p)}
-                        disabled={folderLoading}
-                        title={`Add ${p}`}
-                        className="rounded-full border border-dashed border-border/50 px-2 py-0.5 font-mono text-[10px] text-muted-foreground/70 transition-colors hover:border-foreground/30 hover:bg-accent hover:text-foreground disabled:opacity-40"
-                      >
-                        <span className="text-[11px] font-semibold">+</span> {p.length > 30 ? `...${p.slice(-27)}` : p}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })()}
-
-              {/* Add folder input */}
-              {!customFoldersCollapsed && showFolderInput && (
-                <div className="px-2.5 pb-1 pt-0.5">
-                  <div className="flex items-center gap-1">
-                    <HugeiconsIcon icon={Folder02Icon} className="size-3 shrink-0 text-muted-foreground/40" />
-                    <input
-                      value={folderInput}
-                      onChange={(e) => { setFolderInput(e.target.value); setFolderError(null); }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") { e.preventDefault(); handleAddFolder(); }
-                        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setShowFolderInput(false); setFolderInput(""); setFolderError(null); }
-                      }}
-                      placeholder="/path/to/models"
-                      className="h-6 min-w-0 flex-1 rounded border border-border/50 bg-transparent px-1.5 font-mono text-[10px] text-foreground outline-none placeholder:text-muted-foreground/40 focus:border-foreground/20"
-                      disabled={folderLoading}
-                      autoFocus={true}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowFolderBrowser(true)}
-                      disabled={folderLoading}
-                      aria-label="Browse for folder"
-                      title="Browse folders on the server"
-                      className="flex h-6 shrink-0 items-center justify-center rounded border border-border/50 px-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40"
-                    >
-                      <HugeiconsIcon icon={Search01Icon} className="size-3" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { void handleAddFolder(); }}
-                      disabled={folderLoading || !folderInput.trim()}
-                      className="h-6 shrink-0 rounded border border-border/50 px-1.5 text-[10px] text-muted-foreground transition-colors hover:bg-accent disabled:opacity-40"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  {folderError && (
-                    <p className="px-0.5 pt-0.5 text-[10px] text-destructive">{folderError}</p>
-                  )}
-                </div>
-              )}
-
-              <FolderBrowser
-                open={showFolderBrowser}
-                onOpenChange={setShowFolderBrowser}
-                initialPath={folderInput.trim() || undefined}
-                onSelect={(picked) => {
-                  setFolderInput(picked);
-                  setFolderError(null);
-                  // One-click UX: the "Use this folder" button submits
-                  // the scan folder directly. Pass the path explicitly
-                  // because `folderInput` state hasn't flushed yet.
-                  void handleAddFolder(picked);
-                }}
-              />
-
-
-              {/* Models from custom folders */}
-              {!customFoldersCollapsed && customFolderModels.map((m) => {
-                const isGgufFile = m.path.toLowerCase().endsWith(".gguf");
-                const isGguf =
-                  isGgufFile ||
-                  isGgufRepo(m.id) ||
-                  isGgufRepo(m.display_name);
-                // Single .gguf files (e.g. Ollama blobs) load directly;
-                // GGUF repos/directories expand to pick a variant.
-                const isDirectGguf = isGgufFile;
-                return (
-                  <div key={m.id}>
-                    <ModelRow
-                      label={m.model_id ?? m.display_name}
-                      meta={isGguf ? "GGUF" : "Local"}
-                      selected={value === m.id}
-                      onClick={() => {
-                        if (isDirectGguf) {
-                          onSelect(m.id, {
-                            source: "local",
-                            isLora: false,
-                            isDownloaded: true,
-                          });
-                        } else if (isGguf) {
-                          setExpandedGguf((prev) =>
-                            prev === m.id ? null : m.id,
-                          );
-                        } else {
-                          onSelect(m.id, {
-                            source: "local",
-                            isLora: false,
-                            isDownloaded: true,
-                          });
-                        }
-                      }}
-                      vramStatus={null}
-                    />
-                    {expandedGguf === m.id && (
-                      <GgufVariantExpander
-                        repoId={m.id}
-                        onSelect={onSelect}
-                        gpuGb={gpu.available ? gpu.memoryTotalGb : undefined}
-                        systemRamGb={
-                          gpu.available ? gpu.systemRamAvailableGb : undefined
-                        }
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </>
-          ) : null}
-
-          {!showHfSection && cachedReady ? (
             <>
               <ListLabel
                 icon={<StarIcon className="size-3" />}
@@ -1349,7 +787,7 @@ export function HubModelPicker({
           {showHfSection ? (
             <>
               {(hfIds.length > 0 || isLoading) && (
-                <ListLabel>Hugging Face</ListLabel>
+                <ListLabel>Base Model</ListLabel>
               )}
               {hfIds.length === 0 && !isLoading ? (
                 filteredRecommendedIds.length === 0 ? (
@@ -1408,41 +846,6 @@ export function HubModelPicker({
           ) : null}
         </div>
       </div>
-
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open && !deleting) setDeleteTarget(null);
-        }}
-      >
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete cached model?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove{" "}
-              <span className="font-medium text-foreground">
-                {deleteTarget?.includes("::")
-                  ? `${deleteTarget.split("::")[0]} (${deleteTarget.split("::")[1]})`
-                  : deleteTarget}
-              </span>{" "}
-              from disk. You can re-download it later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>No</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deleting}
-              onClick={(e) => {
-                e.preventDefault();
-                handleDeleteConfirm();
-              }}
-            >
-              {deleting ? "Deleting..." : "Yes"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

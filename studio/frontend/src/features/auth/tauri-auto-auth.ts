@@ -21,7 +21,7 @@ let pending: Promise<boolean> | null = null;
 let lastTauriAuthFailure: string | null = null;
 
 const TAURI_AUTH_FAILURE_FALLBACK =
-  "Desktop authentication failed. Update or repair the managed Studio install, then restart Studio.";
+  "Desktop authentication failed. Update or repair the managed Plane install, then restart Plane.";
 const BACKEND_NOT_READY_MESSAGE = "Backend is not ready";
 
 function authFailureMessage(error: unknown): string {

@@ -32,9 +32,9 @@ import type { MessageRecord, ModelType } from "./types";
 
 const DEFAULT_SUGGESTIONS = [
   {
-    title: "How do you fine-tune an audio model with Unsloth?",
+    title: "How do you fine-tune an audio model with Citi MLOps?",
     label: "Audio fine-tuning",
-    prompt: "How do you fine-tune an audio model with Unsloth?",
+    prompt: "How do you fine-tune an audio model with Citi MLOps?",
   },
   {
     title: "Create a live weather dashboard in HTML using no API key. Show me the code",

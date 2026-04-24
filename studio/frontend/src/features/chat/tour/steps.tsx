@@ -30,7 +30,7 @@ export function buildChatTourSteps({
       body: (
         <>
           This selects what’s loaded for inference. Hub = base models. Fine-tuned
-          = trained Studio outputs, including LoRA adapters and full finetunes.
+          = trained Plane outputs, including LoRA adapters and full finetunes.
         </>
       ),
     },
@@ -40,7 +40,7 @@ export function buildChatTourSteps({
       title: "Two tabs",
       body: (
         <>
-          Hub: search Hugging Face models. Fine-tuned: local Studio outputs you’ve
+          Hub: search Hugging Face models. Fine-tuned: local Plane outputs you’ve
           trained or exported. If results look off, compare base vs fine-tuned
           outputs to see what changed.
         </>

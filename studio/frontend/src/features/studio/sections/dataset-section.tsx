@@ -26,20 +26,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  useDebouncedValue,
-  useHfDatasetSearch,
-  useHfTokenValidation,
-  useInfiniteScroll,
-} from "@/hooks";
-import {
-  HfDatasetSubsetSplitSelectors,
   uploadTrainingDataset,
   useDatasetPreviewDialogStore,
   useTrainingConfigStore,
@@ -68,16 +60,6 @@ const DOCUMENT_REDIRECT_EXTENSIONS = new Set([".pdf", ".docx", ".txt"]);
 const SEARCH_INPUT_REASONS = new Set(["input-change", "input-paste", "input-clear"]);
 const OPEN_LEARNING_RECIPES_ON_ARRIVAL_KEY =
   "data-recipes:open-learning-recipes";
-
-function isLikelyLocalDatasetRef(value: string) {
-  return (
-    value.startsWith("/") ||
-    value.startsWith("./") ||
-    value.startsWith("../") ||
-    value.includes("\\") ||
-    /\.(jsonl|json|csv|parquet)$/i.test(value)
-  );
-}
 
 function deriveLocalDatasetName(path: string): string {
   const normalized = path.replaceAll("\\", "/");
@@ -108,20 +90,14 @@ export function DatasetSection() {
   const {
     dataset,
     datasetSource,
-    selectHfDataset,
     selectLocalDataset,
     datasetFormat,
     setDatasetFormat,
     datasetSubset,
-    setDatasetSubset,
     datasetSplit,
-    setDatasetSplit,
-    datasetEvalSplit,
-    setDatasetEvalSplit,
     uploadedFile,
     uploadedEvalFile,
     setUploadedEvalFile,
-    hfToken,
     modelType,
     datasetSliceStart,
     setDatasetSliceStart,
@@ -131,20 +107,14 @@ export function DatasetSection() {
     useShallow((s) => ({
       dataset: s.dataset,
       datasetSource: s.datasetSource,
-      selectHfDataset: s.selectHfDataset,
       selectLocalDataset: s.selectLocalDataset,
       datasetFormat: s.datasetFormat,
       setDatasetFormat: s.setDatasetFormat,
       datasetSubset: s.datasetSubset,
-      setDatasetSubset: s.setDatasetSubset,
       datasetSplit: s.datasetSplit,
-      setDatasetSplit: s.setDatasetSplit,
-      datasetEvalSplit: s.datasetEvalSplit,
-      setDatasetEvalSplit: s.setDatasetEvalSplit,
       uploadedFile: s.uploadedFile,
       uploadedEvalFile: s.uploadedEvalFile,
       setUploadedEvalFile: s.setUploadedEvalFile,
-      hfToken: s.hfToken,
       modelType: s.modelType,
       datasetSliceStart: s.datasetSliceStart,
       setDatasetSliceStart: s.setDatasetSliceStart,
@@ -155,21 +125,12 @@ export function DatasetSection() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [pickerTab, setPickerTab] = useState<"huggingface" | "local">(
-    datasetSource === "upload" ? "local" : "huggingface",
-  );
   const [localDatasets, setLocalDatasets] = useState<LocalDatasetInfo[]>([]);
   const [hasLoadedLocalDatasets, setHasLoadedLocalDatasets] = useState(false);
   const [localLoading, setLocalLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const openPreview = useDatasetPreviewDialogStore((s) => s.openPreview);
   const selectingRef = useRef(false);
-  const pendingSourceTabRef = useRef<"huggingface" | "local" | null>(null);
-  const debouncedQuery = useDebouncedValue(searchQuery);
-
-  useEffect(() => {
-    setPickerTab(datasetSource === "upload" ? "local" : "huggingface");
-  }, [datasetSource]);
 
   const refreshLocalDatasets = useCallback(async () => {
     setLocalLoading(true);
@@ -188,14 +149,13 @@ export function DatasetSection() {
   }, []);
 
   useEffect(() => {
-    if (pickerTab !== "local") return;
     void refreshLocalDatasets();
-  }, [pickerTab, refreshLocalDatasets]);
+  }, [refreshLocalDatasets]);
 
   useEffect(() => {
     const handleRefresh = () => {
       if (document.hidden) return;
-      if (pickerTab !== "local" && datasetSource !== "upload") return;
+      if (datasetSource !== "upload") return;
       void refreshLocalDatasets();
     };
 
@@ -205,26 +165,14 @@ export function DatasetSection() {
       window.removeEventListener("focus", handleRefresh);
       document.removeEventListener("visibilitychange", handleRefresh);
     };
-  }, [datasetSource, pickerTab, refreshLocalDatasets]);
-
-  function handleDatasetSelect(id: string | null) {
-    selectingRef.current = true;
-    pendingSourceTabRef.current = "huggingface";
-    selectHfDataset(id);
-  }
+  }, [datasetSource, refreshLocalDatasets]);
 
   function handleLocalDatasetSelect(path: string) {
     selectingRef.current = true;
-    pendingSourceTabRef.current = "local";
     selectLocalDataset(path);
   }
 
-  function clearSelectionForTab(tab: "huggingface" | "local") {
-    pendingSourceTabRef.current = tab;
-    if (tab === "huggingface") {
-      handleDatasetSelect(null);
-      return;
-    }
+  function clearDatasetSelection() {
     selectingRef.current = true;
     selectLocalDataset(null);
   }
@@ -246,29 +194,6 @@ export function DatasetSection() {
   }
 
   const effectiveModelType = modelType ?? "text";
-
-  const {
-    results: hfResults,
-    isLoading,
-    isLoadingMore,
-    fetchMore,
-    error: hfSearchError,
-  } = useHfDatasetSearch(pickerTab === "huggingface" ? debouncedQuery : "", {
-    modelType: effectiveModelType,
-    accessToken: hfToken || undefined,
-    enabled: pickerTab === "huggingface",
-  });
-
-  const { error: tokenValidationError, isChecking: isCheckingToken } =
-    useHfTokenValidation(hfToken);
-
-  const hfResultIds = useMemo(() => {
-    const ids = hfResults.map((r) => r.id);
-    if (dataset && !ids.includes(dataset)) {
-      ids.push(dataset);
-    }
-    return ids;
-  }, [hfResults, dataset]);
 
   const localFilteredDatasets = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -323,21 +248,8 @@ export function DatasetSection() {
     selectLocalDataset,
   ]);
 
-  const activeSourceTab = datasetSource === "upload" ? "local" : "huggingface";
-  const comboboxItems = pickerTab === "huggingface" ? hfResultIds : localResultIds;
-  const comboboxValue =
-    pickerTab === "huggingface"
-      ? datasetSource === "huggingface"
-        ? dataset
-        : null
-      : datasetSource === "upload"
-        ? selectedLocalId
-        : null;
-  const isHfDatasetSelected =
-    datasetSource === "huggingface" &&
-    !!dataset &&
-    !isLikelyLocalDatasetRef(dataset);
-
+  const comboboxItems = localResultIds;
+  const comboboxValue = datasetSource === "upload" ? selectedLocalId : null;
   const selectedDatasetName = datasetSource === "upload" ? uploadedFile : dataset;
   const selectedLocalMetadata = selectedLocalDataset?.metadata ?? null;
   const selectedLocalColumns = selectedLocalMetadata?.columns ?? [];
@@ -348,10 +260,6 @@ export function DatasetSection() {
   const comboboxAnchorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const evalFileInputRef = useRef<HTMLInputElement>(null);
-  const { scrollRef, sentinelRef } = useInfiniteScroll(
-    fetchMore,
-    hfResults.length,
-  );
 
   const [isUploading, setIsUploading] = useState(false);
   const [documentRedirectOpen, setDocumentRedirectOpen] = useState(false);
@@ -427,7 +335,7 @@ export function DatasetSection() {
             <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               Choose dataset
               <span className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-foreground/80">
-                {datasetSource === "upload" ? "Local" : "Hugging Face"}
+                Local
               </span>
               <Tooltip>
                 <TooltipTrigger asChild={true}>
@@ -442,8 +350,8 @@ export function DatasetSection() {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  Use the popup tabs to switch between Hugging Face and local
-                  recipe outputs.{" "}
+                  Choose a dataset produced on this system (e.g. Data Recipe
+                  outputs) or upload a file.{" "}
                   <a
                     href="https://unsloth.ai/docs/get-started/fine-tuning-llms-guide/datasets-guide"
                     target="_blank"
@@ -462,16 +370,6 @@ export function DatasetSection() {
                 if (event.key !== "Enter") return;
                 if (!(event.target instanceof HTMLInputElement)) return;
                 event.preventDefault();
-                if (pickerTab === "huggingface") {
-                  if (hfResults.length > 0) {
-                    handleDatasetSelect(hfResults[0].id);
-                  } else {
-                    const text = event.target.value.trim();
-                    if (text) handleDatasetSelect(text);
-                  }
-                  return;
-                }
-
                 if (localResultIds.length > 0) {
                   const selectedId = localResultIds[0];
                   const path = localPathById.get(selectedId);
@@ -488,21 +386,13 @@ export function DatasetSection() {
                 value={comboboxValue}
                 onOpenChange={(open) => {
                   setSearchQuery("");
-                  if (open && (pickerTab === "local" || activeSourceTab === "local")) {
+                  if (open) {
                     void refreshLocalDatasets();
-                  }
-                  if (!open) {
-                    setPickerTab(pendingSourceTabRef.current ?? activeSourceTab);
-                    pendingSourceTabRef.current = null;
                   }
                 }}
                 onValueChange={(value) => {
                   if (!value) {
-                    clearSelectionForTab(pickerTab);
-                    return;
-                  }
-                  if (pickerTab === "huggingface") {
-                    handleDatasetSelect(value);
+                    clearDatasetSelection();
                     return;
                   }
                   const path = localPathById.get(value);
@@ -513,19 +403,11 @@ export function DatasetSection() {
                 onInputValueChange={(value, eventDetails) =>
                   handleInputChange(value, eventDetails)
                 }
-                itemToStringValue={(id) =>
-                  pickerTab === "local"
-                    ? localLabelById.get(id) ?? id
-                    : id
-                }
+                itemToStringValue={(id) => localLabelById.get(id) ?? id}
                 autoHighlight={true}
               >
                 <ComboboxInput
-                  placeholder={
-                    pickerTab === "huggingface"
-                      ? "Search Hugging Face datasets..."
-                      : "Search local datasets..."
-                  }
+                  placeholder="Search local datasets..."
                   className="w-full min-w-0 overflow-hidden leading-5"
                   showClear={true}
                 >
@@ -535,170 +417,65 @@ export function DatasetSection() {
                 </ComboboxInput>
                 <ComboboxContent anchor={comboboxAnchorRef}>
                   <div className="px-2 pt-2 pb-2">
-                    <Tabs
-                      value={pickerTab}
-                      onValueChange={(value) => {
-                        setPickerTab(value as "huggingface" | "local");
-                        setSearchQuery("");
-                      }}
-                      className="w-full"
-                    >
-                      <TabsList className=" w-full">
-                        <TabsTrigger value="huggingface">Hugging Face</TabsTrigger>
-                        <TabsTrigger value="local">Local</TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent value="huggingface" className="m-0">
-                        {isLoading ? (
-                          <div className="flex items-center justify-center py-4 gap-2 text-xs text-muted-foreground">
-                            <Spinner className="size-4" /> Searching...
-                          </div>
+                    {localLoading ? (
+                      <div className="flex items-center justify-center py-4 gap-2 text-xs text-muted-foreground">
+                        <Spinner className="size-4" /> Loading local datasets...
+                      </div>
+                    ) : (
+                      <>
+                        {localError ? (
+                          <p className="px-2 py-2 text-xs text-destructive">{localError}</p>
                         ) : (
-                          <ComboboxEmpty>No datasets found</ComboboxEmpty>
+                          <ComboboxEmpty className="px-2 py-3">
+                            <div className="flex w-full flex-col items-center gap-2 text-center">
+                              <p className="text-xs text-muted-foreground">
+                                {localDatasets.length === 0
+                                  ? "No local datasets yet."
+                                  : "No local datasets match search."}
+                              </p>
+                              {localDatasets.length === 0 ? (
+                                <Button asChild={true} size="sm" variant="outline">
+                                  <a href="/data-recipes">Open Data Recipes</a>
+                                </Button>
+                              ) : null}
+                            </div>
+                          </ComboboxEmpty>
                         )}
-                        <div
-                          ref={scrollRef}
-                          className="max-h-64 overflow-y-auto overscroll-contain [scrollbar-width:thin]"
-                        >
+                        <div className="max-h-64 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
                           <ComboboxList className="p-1 !max-h-none !overflow-visible">
                             {(id: string) => {
+                              const label = localLabelById.get(id) ?? id;
                               return (
                                 <ComboboxItem key={id} value={id} className="gap-2">
                                   <Tooltip>
                                     <TooltipTrigger asChild={true}>
                                       <span className="block min-w-0 flex-1 truncate">
-                                        {id}
+                                        {label}
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent
                                       side="left"
                                       className="max-w-xs break-all"
                                     >
-                                      {id}
+                                      {label}
                                     </TooltipContent>
                                   </Tooltip>
                                 </ComboboxItem>
                               );
                             }}
                           </ComboboxList>
-                          <div ref={sentinelRef} className="h-px" />
-                          {isLoadingMore && (
-                            <div className="flex items-center justify-center py-2">
-                              <Spinner className="size-3.5 text-muted-foreground" />
-                            </div>
-                          )}
                         </div>
-                      </TabsContent>
-
-                      <TabsContent value="local" className="m-0">
-                        {localLoading ? (
-                          <div className="flex items-center justify-center py-4 gap-2 text-xs text-muted-foreground">
-                            <Spinner className="size-4" /> Loading local datasets...
-                          </div>
-                        ) : (
-                          <>
-                            {localError ? (
-                              <p className="px-2 py-2 text-xs text-destructive">{localError}</p>
-                            ) : (
-                              <ComboboxEmpty className="px-2 py-3">
-                                <div className="flex w-full flex-col items-center gap-2 text-center">
-                                  <p className="text-xs text-muted-foreground">
-                                    {localDatasets.length === 0
-                                      ? "No local datasets yet."
-                                      : "No local datasets match search."}
-                                  </p>
-                                  {localDatasets.length === 0 ? (
-                                    <Button asChild={true} size="sm" variant="outline">
-                                      <a href="/data-recipes">Open Data Recipes</a>
-                                    </Button>
-                                  ) : null}
-                                </div>
-                              </ComboboxEmpty>
-                            )}
-                            <div className="max-h-64 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
-                              <ComboboxList className="p-1 !max-h-none !overflow-visible">
-                                {(id: string) => {
-                                  const label = localLabelById.get(id) ?? id;
-                                  return (
-                                    <ComboboxItem key={id} value={id} className="gap-2">
-                                      <Tooltip>
-                                        <TooltipTrigger asChild={true}>
-                                          <span className="block min-w-0 flex-1 truncate">
-                                            {label}
-                                          </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent
-                                          side="left"
-                                          className="max-w-xs break-all"
-                                        >
-                                          {label}
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </ComboboxItem>
-                                  );
-                                }}
-                              </ComboboxList>
-                            </div>
-                          </>
-                        )}
-                      </TabsContent>
-                    </Tabs>
+                      </>
+                    )}
                   </div>
                 </ComboboxContent>
               </Combobox>
             </div>
-            {(tokenValidationError ?? hfSearchError) && (
-              <p className="text-xs text-destructive">
-                {tokenValidationError ?? hfSearchError}
-                {" — "}
-                <a
-                  href="https://huggingface.co/settings/tokens"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline"
-                >
-                  Get or update token
-                </a>
-              </p>
-            )}
-            {isCheckingToken && (
-              <p className="text-xs text-muted-foreground">Checking token…</p>
-            )}
-            {pickerTab !== activeSourceTab && (
-              <p className="text-[11px] text-muted-foreground">
-                Browsing {pickerTab === "local" ? "Local datasets" : "Hugging Face"}.
-                Current selection stays {datasetSource === "upload" ? "Local" : "Hugging Face"}.
-              </p>
-            )}
           </div>
 
-          {isHfDatasetSelected ? (
-            <HfDatasetSubsetSplitSelectors
-              variant="studio"
-              enabled={true}
-              datasetName={dataset}
-              accessToken={hfToken || undefined}
-              datasetSubset={datasetSubset}
-              setDatasetSubset={setDatasetSubset}
-              datasetSplit={datasetSplit}
-              setDatasetSplit={setDatasetSplit}
-              datasetEvalSplit={datasetEvalSplit}
-              setDatasetEvalSplit={setDatasetEvalSplit}
-            />
-          ) : !selectedDatasetName ? (
-            <HfDatasetSubsetSplitSelectors
-              variant="studio"
-              enabled={false}
-              datasetName={null}
-              accessToken={hfToken || undefined}
-              datasetSubset={datasetSubset}
-              setDatasetSubset={setDatasetSubset}
-              datasetSplit={datasetSplit}
-              setDatasetSplit={setDatasetSplit}
-              datasetEvalSplit={datasetEvalSplit}
-              setDatasetEvalSplit={setDatasetEvalSplit}
-            />
-          ) : datasetSource === "upload" && selectedLocalDataset ? (
+          {selectedDatasetName &&
+            datasetSource === "upload" &&
+            selectedLocalDataset ? (
             <div className="rounded-lg border bg-muted/20 px-3.5 py-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
@@ -954,7 +731,7 @@ export function DatasetSection() {
                       )
                     ) : (
                       <>
-                        Hugging Face Dataset
+                        Training dataset
                         {datasetSubset && ` / ${datasetSubset}`}
                         {datasetSplit && ` / ${datasetSplit}`}
                       </>
@@ -965,7 +742,7 @@ export function DatasetSection() {
                   variant="ghost"
                   size="sm"
                   className="shrink-0 text-xs"
-                  onClick={() => clearSelectionForTab(activeSourceTab)}
+                  onClick={() => clearDatasetSelection()}
                 >
                   Clear
                 </Button>

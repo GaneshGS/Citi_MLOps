@@ -2,7 +2,7 @@
 # Copyright 2026-present the Unsloth AI Inc. team. All rights reserved. See /studio/LICENSE.AGPL-3.0
 
 """
-API Routes
+API Routes (Citi-centric build: local GPU training / llama-server removed).
 """
 
 from routes.training import router as training_router

@@ -63,6 +63,7 @@ export function InlineSeed({ config, onUpdate }: InlineSeedProps): ReactElement 
         </p>
         <p className="text-[11px] text-muted-foreground">
           {isLocal ? "Structured file" : "Unstructured document"} · configure in dialog
+          {config.gssp_enabled ? " · GSSP enabled" : ""}
         </p>
       </div>
       <HugeiconsIcon icon={Plant01Icon} className="ml-auto size-3.5 text-muted-foreground/60" />

@@ -80,6 +80,17 @@ export type RecipePayload = {
     unstructured_chunk_size?: string;
     // biome-ignore lint/style/useNamingConvention: api schema
     unstructured_chunk_overlap?: string;
+    gssp_enabled?: boolean;
+    gssp_endpoint?: string;
+    gssp_path?: string;
+    gssp_auth_token?: string;
+    gssp_x_correlation_id?: string;
+    gssp_x_application_id?: string;
+    gssp_x_soeid?: string;
+    gssp_x_model_name?: string;
+    gssp_x_max_tokens?: string;
+    gssp_x_authorization_coin?: string;
+    gssp_request_template?: string;
     // ui-only: per-node advanced accordion state
     advanced_open_by_node?: Record<string, boolean>;
   };

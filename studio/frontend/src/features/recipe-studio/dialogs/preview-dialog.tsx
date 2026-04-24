@@ -48,6 +48,14 @@ type RunDialogProps = {
     valid: boolean;
     errors: string[];
     rawDetail: string | null;
+    details: Array<{
+      message: string;
+      code?: string | null;
+      hint?: string | null;
+      fieldPath?: string | null;
+      blockName?: string | null;
+      blockId?: string | null;
+    }>;
   } | null;
   errors: string[];
   onRun: () => void;
@@ -206,7 +214,7 @@ function ValidationResultPanel({
       className={cn(
         "space-y-3 rounded-2xl border p-4 shadow-border backdrop-blur-sm",
         validateResult.valid
-          ? "border-emerald-300/70 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+          ? "border-primary/35 bg-primary/6 dark:border-primary/40 dark:bg-primary/10"
           : "border-destructive/30 bg-destructive/5",
       )}
     >
@@ -215,7 +223,7 @@ function ValidationResultPanel({
           className={cn(
             "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border",
             validateResult.valid
-              ? "border-emerald-300/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-900/60 dark:text-emerald-300"
+              ? "border-primary/35 bg-primary/10 text-primary dark:border-primary/40 dark:text-primary"
               : "border-destructive/30 bg-destructive/10 text-destructive",
           )}
         >
@@ -231,7 +239,7 @@ function ValidationResultPanel({
             className={cn(
               "text-sm font-semibold",
               validateResult.valid
-                ? "text-emerald-700 dark:text-emerald-300"
+                ? "text-primary dark:text-primary"
                 : "text-destructive",
             )}
           >

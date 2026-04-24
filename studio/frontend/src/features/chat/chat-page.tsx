@@ -26,7 +26,6 @@ import {
 } from "react";
 import { toast } from "sonner";
 import type { ChatSearch } from "@/app/routes/chat";
-import { listLocalModels } from "./api/chat-api";
 import { ChatSettingsPanel } from "./chat-settings-sheet";
 import { ContextUsageBar } from "./components/context-usage-bar";
 import { ModelLoadInlineStatus } from "./components/model-load-status";
@@ -705,41 +704,8 @@ export function ChatPage(): ReactElement {
     [modelsFromStore],
   );
 
-  const [localModels, setLocalModels] = useState<LoraModelOption[]>([]);
-
-  const refreshLocalModels = useCallback(() => {
-    void listLocalModels()
-      .then((res) => {
-        setLocalModels(
-          res.models
-            .filter(
-              (m) =>
-                m.source === "lmstudio" ||
-                m.source === "models_dir" ||
-                m.source === "custom",
-            )
-            .map((m) => ({
-              id: m.id,
-              name:
-                m.source === "lmstudio" && m.model_id
-                  ? m.model_id
-                  : m.display_name,
-              baseModel:
-                m.source === "lmstudio"
-                  ? "LM Studio"
-                  : m.source === "custom"
-                    ? "Custom Folders"
-                    : "Local models",
-              updatedAt: m.updated_at ?? undefined,
-              source: "local" as const,
-            })),
-        );
-      })
-      .catch(() => {});
-  }, [navigate]);
-
   const loraModels = useMemo<LoraModelOption[]>(() => {
-    const fromLoras = lorasFromStore.map((lora) => ({
+    return lorasFromStore.map((lora) => ({
       id: lora.id,
       name: lora.name,
       baseModel: lora.baseModel,
@@ -747,14 +713,12 @@ export function ChatPage(): ReactElement {
       source: lora.source,
       exportType: lora.exportType,
     }));
-    return [...fromLoras, ...localModels];
-  }, [lorasFromStore, localModels]);
+  }, [lorasFromStore]);
 
   useEffect(() => {
     if (getTrainingCompareHandoff()) return;
     void refresh();
-    refreshLocalModels();
-  }, [refresh, refreshLocalModels]);
+  }, [refresh]);
 
   useEffect(() => {
     const handoff = getTrainingCompareHandoff();
@@ -880,7 +844,7 @@ export function ChatPage(): ReactElement {
                 activeGgufVariant={activeGgufVariant}
                 onValueChange={handleCheckpointChange}
                 onEject={handleEject}
-                onFoldersChange={refreshLocalModels}
+                onFoldersChange={undefined}
                 variant="ghost"
                 open={modelSelectorOpen}
                 onOpenChange={handleModelSelectorOpenChange}
@@ -960,7 +924,7 @@ export function ChatPage(): ReactElement {
             pairId={view.pairId}
             models={models}
             loraModels={loraModels}
-            onFoldersChange={refreshLocalModels}
+            onFoldersChange={undefined}
           />
         )}
       </div>

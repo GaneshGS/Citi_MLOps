@@ -24,7 +24,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { streamExportLogs, type ExportLogEntry } from "../api/export-api";
 import { collapseAnim } from "../anim";
-import { EXPORT_METHODS, type ExportMethod } from "../constants";
 
 // Max log lines kept in the dialog's local state. Matches the backend
 // ring buffer's maxlen so the UI shows the full scrollback captured
@@ -49,22 +48,20 @@ interface UseExportLogsResult {
  */
 function useExportLogs(
   exporting: boolean,
-  exportMethod: ExportMethod | null,
+  logResetKey: string,
   open: boolean,
 ): UseExportLogsResult {
   const [lines, setLines] = useState<ExportLogEntry[]>([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset log state whenever the user moves to a different screen --
-  // either by switching export method or by reopening the dialog -- so
-  // each (open × method) tuple shows only its own run history. The
-  // streaming effect below additionally clears on new export start.
+  // Reset log state when the checkpoint / label context changes or the
+  // dialog reopens so each run shows only its own history.
   useEffect(() => {
     setLines([]);
     setError(null);
     setConnected(false);
-  }, [exportMethod, open]);
+  }, [logResetKey, open]);
 
   useEffect(() => {
     if (!exporting) return;
@@ -182,7 +179,7 @@ function useExportLogs(
  * Tick every second while `exporting` is true and report elapsed
  * seconds. Powers the "Working… 27s" badge in the log header so the
  * panel doesn't look frozen during long single-step phases (cache
- * file copy, GGUF conversion) when no new lines are arriving.
+ * file copy, long merge steps) when no new lines are arriving.
  */
 function useElapsedSeconds(exporting: boolean): number {
   const [elapsed, setElapsed] = useState(0);
@@ -220,8 +217,12 @@ interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   checkpoint: string | null;
-  exportMethod: ExportMethod | null;
-  quantLevels: string[];
+  /** Shown in the summary (e.g. merged adapters vs full weights). */
+  exportFormatLabel: string;
+  /** When true, stream live export logs and use the log completion flow. */
+  showExportLog?: boolean;
+  /** Bumps log state when the export source changes (e.g. run + checkpoint). */
+  logResetKey: string;
   estimatedSize: string;
   baseModelName: string;
   isAdapter: boolean;
@@ -251,8 +252,9 @@ export function ExportDialog({
   open,
   onOpenChange,
   checkpoint,
-  exportMethod,
-  quantLevels,
+  exportFormatLabel,
+  showExportLog = true,
+  logResetKey,
   estimatedSize: _estimatedSize,
   baseModelName,
   isAdapter,
@@ -272,16 +274,11 @@ export function ExportDialog({
   exportSuccess,
   exportOutputPath,
 }: ExportDialogProps) {
-  // Live log capture is useful for any export path executed by the
-  // backend worker, including LoRA adapter-only export.
-  const showLogPanel =
-    exportMethod === "merged" ||
-    exportMethod === "gguf" ||
-    exportMethod === "lora";
+  const showLogPanel = showExportLog;
   const showCompletionScreen = exportSuccess && !showLogPanel;
 
   const { lines: logLines, connected: logConnected, error: logError } =
-    useExportLogs(exporting && showLogPanel, exportMethod, open);
+    useExportLogs(exporting && showLogPanel, logResetKey, open);
   const elapsedSeconds = useElapsedSeconds(exporting && showLogPanel);
 
   const logScrollRef = useRef<HTMLDivElement | null>(null);
@@ -318,8 +315,8 @@ export function ExportDialog({
         {showCompletionScreen ? (
           <>
             <div className="flex flex-col items-center gap-3 py-6">
-              <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10">
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-6 text-emerald-500" />
+              <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-6 text-primary" />
               </div>
               <div className="flex flex-col items-center gap-2 text-center">
                 <h3 className="text-lg font-semibold">Export Complete</h3>
@@ -396,7 +393,7 @@ export function ExportDialog({
                           Model Name
                         </label>
                         <Input
-                          placeholder="my-model-gguf"
+                          placeholder="my-model"
                           value={modelName}
                           onChange={(e) => onModelNameChange(e.target.value)}
                           disabled={exporting}
@@ -413,7 +410,7 @@ export function ExportDialog({
                           href="https://huggingface.co/settings/tokens"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[11px] text-emerald-600 hover:text-emerald-700 transition-colors"
+                          className="flex items-center gap-1 text-[11px] text-primary hover:text-primary/80 transition-colors"
                         >
                           Get token
                           <HugeiconsIcon
@@ -465,7 +462,7 @@ export function ExportDialog({
                 Keep users on the log screen after completion so they can
                 inspect conversion output before closing. */}
             {exportSuccess && showLogPanel && (
-              <div className="flex items-start gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+              <div className="flex items-start gap-2 rounded-lg bg-primary/8 p-3 text-sm text-primary dark:text-primary">
                 <HugeiconsIcon icon={CheckmarkCircle02Icon} className="mt-0.5 size-4 shrink-0" />
                 <div className="flex min-w-0 flex-col gap-1">
                   <span>
@@ -500,20 +497,12 @@ export function ExportDialog({
                 <span>{isAdapter ? "Checkpoint" : "Model"}</span>
                 <span className="font-medium text-foreground">{checkpoint}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Export Method</span>
-                <span className="font-medium text-foreground">
-                  {EXPORT_METHODS.find((m) => m.value === exportMethod)?.title}
+              <div className="flex justify-between gap-4">
+                <span>Export</span>
+                <span className="font-medium text-foreground text-right max-w-[65%]">
+                  {exportFormatLabel}
                 </span>
               </div>
-              {exportMethod === "gguf" && quantLevels.length > 0 && (
-                <div className="flex justify-between">
-                  <span>Quantizations</span>
-                  <span className="font-medium text-foreground">
-                    {quantLevels.join(", ")}
-                  </span>
-                </div>
-              )}
               {/* TODO: unhide once estimated size comes from the backend API */}
               {/* <div className="flex justify-between">
             <span>Est. size</span>
@@ -534,7 +523,7 @@ export function ExportDialog({
                         <span
                           className={
                             logConnected
-                              ? "inline-block size-1.5 rounded-full bg-emerald-500"
+                              ? "inline-block size-1.5 rounded-full bg-primary"
                               : "inline-block size-1.5 rounded-full bg-muted-foreground/40"
                           }
                         />
@@ -555,7 +544,7 @@ export function ExportDialog({
                     <div
                       ref={logScrollRef}
                       onScroll={handleLogScroll}
-                      className="h-56 w-full overflow-auto rounded-lg border border-border/40 bg-black/85 p-3 font-mono text-[11px] leading-[1.45] text-emerald-200/90"
+                      className="h-56 w-full overflow-auto rounded-lg border border-border/40 bg-black/85 p-3 font-mono text-[11px] leading-[1.45] text-sky-200/90"
                     >
                       {logLines.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-muted-foreground/70">

@@ -134,7 +134,7 @@ export function GeneralTab() {
       <header className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold font-heading">General</h1>
         <p className="text-xs text-muted-foreground">
-          Global preferences for Unsloth Studio.
+          Global preferences for Citi MLOps.
         </p>
       </header>
 
@@ -218,7 +218,7 @@ export function GeneralTab() {
             <DialogTitle>Reset all local preferences?</DialogTitle>
             <DialogDescription>
               This clears your theme, tokens, and stored settings, then reloads
-              Studio. Chats and API keys are not affected.
+              the app. Chats and API keys are not affected.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

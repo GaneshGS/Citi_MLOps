@@ -59,7 +59,7 @@ function buildDefaultDescription(execution: RecipeExecutionRecord | null): strin
     typeof records === "number" && records > 0
       ? ` It contains ${records.toLocaleString()} generated records.`
       : "";
-  return `${runName} was generated with Unsloth Recipe Studio.${recordPart}`;
+  return `${runName} was generated with Citi MLOps Recipe Plane.${recordPart}`;
 }
 
 export function PublishExecutionDialog({
@@ -169,10 +169,10 @@ export function PublishExecutionDialog({
         {publishedUrl ? (
           <>
             <div className="flex flex-col items-center gap-3 py-4">
-              <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10">
+              <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
                 <HugeiconsIcon
                   icon={CheckmarkCircle02Icon}
-                  className="size-6 text-emerald-600 dark:text-emerald-400"
+                  className="size-6 text-primary dark:text-primary"
                 />
               </div>
               <div className="space-y-1 text-center">

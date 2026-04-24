@@ -14,7 +14,7 @@ export function AppearanceTab() {
       <header className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold font-heading">Appearance</h1>
         <p className="text-xs text-muted-foreground">
-          How Unsloth Studio looks on this device.
+          How Citi MLOps looks on this device.
         </p>
       </header>
 

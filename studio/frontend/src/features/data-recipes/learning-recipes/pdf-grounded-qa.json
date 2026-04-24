@@ -1,25 +1,8 @@
 {
   "recipe": {
-    "model_providers": [
-      {
-        "name": "provider_1",
-        "endpoint": "",
-        "provider_type": "openai",
-        "extra_headers": {},
-        "extra_body": {}
-      }
-    ],
+    "model_providers": [],
     "mcp_providers": [],
-    "model_configs": [
-      {
-        "alias": "provider_column",
-        "model": "",
-        "provider": "provider_1",
-        "inference_parameters": {
-          "temperature": 0.7
-        }
-      }
-    ],
+    "model_configs": [],
     "seed_config": {
       "source": {
         "seed_type": "unstructured",
@@ -36,7 +19,7 @@
         "column_type": "llm-structured",
         "name": "llm_structured_1",
         "drop": false,
-        "model_alias": "provider_column",
+        "model_alias": "gssp_default",
         "prompt": "Given ONLY this chunk: {{ chunk_text }} generate one answerable question, answer, and exact supporting quote from chunk. If not answerable, skip.",
         "with_trace": "none",
         "extract_reasoning_content": false,
@@ -74,54 +57,9 @@
   "ui": {
     "nodes": [
       {
-        "id": "note_1",
-        "x": 474.6120044693708,
-        "y": 1229.5810476890458,
-        "width": 400,
-        "node_type": "markdown_note",
-        "name": "note_1",
-        "markdown": "This recipe uses **seed data** from external documents.\nInstead of starting from empty generation, we load real source text first.\n\nIn this flow, the seed source is **Unstructured Documents**:\n\n- Upload: `.pdf`, `.docx`, `.txt`\n- Text is extracted and split on client into chunks\n- Each chunk becomes a row-like seed record (`chunk_text`) that you can reference in prompts with `{{ chunk_text }} `",
-        "note_color": "#F3E8FF",
-        "note_opacity": "35"
-      },
-      {
-        "id": "note_2",
-        "x": 26.758540311329455,
-        "y": 963.3465578835235,
-        "width": 400,
-        "node_type": "markdown_note",
-        "name": "note_2",
-        "markdown": "##### Chunking settings:\n\n- **Chunk size**: how much text per chunk\n- **Chunk overlap**: shared text between neighboring chunks to preserve context\n\n##### Sampling settings:\n\n- **Ordered**: keep original document order\n- **Shuffle**: randomize chunk order\n- **Selection index / selection settings**: choose which part/subset of seed data to use",
-        "note_color": "#F3E8FF",
-        "note_opacity": "35"
-      },
-      {
-        "id": "note_3",
-        "x": 473.62551435180245,
-        "y": 741.5352258256931,
-        "width": 400,
-        "node_type": "markdown_note",
-        "name": "note_3",
-        "markdown": "- LLM prompt: `{{ chunk_text }}`\n- Expression block: combine/format values using `{{ chunk_text }}`\n- Processor templates: use `{{ chunk_text }}` during transforms\n\nTip:\n- Start with medium chunk size + small overlap.\n- Increase overlap only if answers lose context between chunks.",
-        "note_color": "#F3E8FF",
-        "note_opacity": "35"
-      },
-      {
         "id": "seed",
         "x": 484.36210245413577,
         "y": 1059.99180558796,
-        "width": 400
-      },
-      {
-        "id": "provider_1",
-        "x": 960,
-        "y": 622,
-        "width": 400
-      },
-      {
-        "id": "provider_column",
-        "x": 960,
-        "y": 816,
         "width": 400
       },
       {
@@ -132,20 +70,6 @@
       }
     ],
     "edges": [
-      {
-        "from": "provider_1",
-        "to": "provider_column",
-        "type": "semantic",
-        "source_handle": "semantic-out-bottom",
-        "target_handle": "semantic-in-top"
-      },
-      {
-        "from": "provider_column",
-        "to": "llm_structured_1",
-        "type": "semantic",
-        "source_handle": "semantic-out-bottom",
-        "target_handle": "data-in-top"
-      },
       {
         "from": "llm_structured_1",
         "to": "seed",
@@ -161,6 +85,16 @@
     "seed_preview_rows": [],
     "local_file_name": "",
     "unstructured_file_name": "",
+    "gssp_enabled": true,
+    "gssp_endpoint": "https://gssp-gs-icg-tts-genaiservices-178442.apps.namicggtd013d.ecs.dyn.nsroot.net",
+    "gssp_path": "/api/gssp-generation-service/v1/generate-pass-through",
+    "gssp_auth_token": "",
+    "gssp_x_correlation_id": "",
+    "gssp_x_application_id": "",
+    "gssp_x_soeid": "",
+    "gssp_x_model_name": "",
+    "gssp_x_max_tokens": "",
+    "gssp_x_authorization_coin": "",
     "unstructured_chunk_size": "1200",
     "unstructured_chunk_overlap": "200"
   }

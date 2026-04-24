@@ -62,7 +62,7 @@ export function ImportDialog({
           <FieldLabel
             label="Recipe JSON"
             htmlFor={payloadId}
-            hint="Paste JSON exported from Recipe Studio."
+            hint="Paste JSON exported from Recipe Plane."
           />
           <Textarea
             id={payloadId}

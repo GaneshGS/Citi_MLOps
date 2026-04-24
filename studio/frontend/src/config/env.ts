@@ -34,9 +34,14 @@ function detectLocalPlatform(): DeviceType {
 
 const localDeviceType = detectLocalPlatform();
 
+// Upstream Unsloth sets `chatOnly` on macOS: Studio training/export are not
+// supported on Apple Silicon in their beta (Chat + Data Recipes only; MLX
+// training TBD) — see https://unsloth.ai/docs/new/studio . This fork keeps
+// `chatOnly` off so Train stays available in the UI; capability still
+// depends on the local backend and GPU.
 export const usePlatformStore = create<PlatformState>()((_, get) => ({
   deviceType: localDeviceType,
-  chatOnly: localDeviceType === "mac",
+  chatOnly: false,
   fetched: false,
   isChatOnly: () => get().chatOnly,
 }));
@@ -48,19 +53,17 @@ export async function fetchDeviceType(): Promise<DeviceType> {
   try {
     const res = await fetch(apiUrl("/api/health"));
     if (res.ok) {
-      const data = (await res.json()) as { device_type?: string; chat_only?: boolean };
+      const data = (await res.json()) as { device_type?: string };
       const deviceType = data.device_type ?? detectLocalPlatform();
-      const chatOnly = data.chat_only ?? deviceType === "mac";
+      const chatOnly = false;
       usePlatformStore.setState({ deviceType, chatOnly, fetched: true });
       return deviceType;
     }
   } catch {
-    // Backend not ready — use client-side detection so chat-only guard
-    // still works on initial load (important for macOS). Keep fetched=false
-    // so a later call retries against the backend.
+    // Backend not ready — still record device; keep fetched=false so a later
+    // call can retry /api/health.
     const deviceType = detectLocalPlatform();
-    const chatOnly = deviceType === "mac";
-    usePlatformStore.setState({ deviceType, chatOnly, fetched: false });
+    usePlatformStore.setState({ deviceType, chatOnly: false, fetched: false });
     return deviceType;
   }
 

@@ -16,26 +16,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { toastError } from "@/shared/toast";
 import {
   Album02Icon,
   ArrowDown01Icon,
-  CodeIcon,
   CookBookIcon,
-  Database02Icon,
   Delete02Icon,
   DocumentAttachmentIcon,
   FunctionIcon,
-  Plant01Icon,
   PlusSignIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -67,22 +56,6 @@ type TemplateCard = {
 
 const TEMPLATE_CARDS: TemplateCard[] = [
   {
-    title: "Instruction from Answer",
-    description:
-      "Start from seed answer fields and generate matching user instructions for SFT pairs.",
-    icon: Plant01Icon,
-    difficulty: "Easy",
-    learningBadges: ["Seed Dataset", "LLM Text", "Prompting"],
-    surfaceClassName:
-      "from-emerald-500/15 via-green-500/5 to-transparent dark:from-emerald-400/30 dark:via-green-400/14 dark:to-emerald-950/16",
-    shineColor: [
-      "rgb(16 185 129 / 0.45)",
-      "rgb(34 197 94 / 0.4)",
-      "rgb(52 211 153 / 0.45)",
-    ],
-    learningRecipeId: "instruction-from-answer",
-  },
-  {
     title: "PDF Document QA",
     description:
       "Unstructured PDF chunks transformed into grounded question-answer training pairs.",
@@ -90,11 +63,11 @@ const TEMPLATE_CARDS: TemplateCard[] = [
     difficulty: "Easy",
     learningBadges: ["Unstructured", "LLM Text"],
     surfaceClassName:
-      "from-violet-500/15 via-fuchsia-500/5 to-transparent dark:from-violet-400/30 dark:via-fuchsia-400/14 dark:to-violet-950/16",
+      "from-sky-500/12 via-primary/6 to-transparent dark:from-sky-400/24 dark:via-primary/10 dark:to-slate-900/18",
     shineColor: [
-      "rgb(139 92 246 / 0.45)",
-      "rgb(217 70 239 / 0.4)",
-      "rgb(168 85 247 / 0.45)",
+      "oklch(0.62 0.1 250 / 0.4)",
+      "oklch(0.5 0.12 256 / 0.45)",
+      "oklch(0.55 0.09 252 / 0.38)",
     ],
     learningRecipeId: "pdf-grounded-qa",
   },
@@ -106,45 +79,13 @@ const TEMPLATE_CARDS: TemplateCard[] = [
     difficulty: "Starter",
     learningBadges: ["Vision", "LLM Text", "Image Context"],
     surfaceClassName:
-      "from-lime-500/15 via-emerald-500/5 to-transparent dark:from-lime-400/30 dark:via-emerald-400/14 dark:to-lime-950/16",
+      "from-primary/12 via-sky-500/7 to-transparent dark:from-primary/24 dark:via-sky-400/12 dark:to-primary/14",
     shineColor: [
-      "rgb(132 204 22 / 0.45)",
-      "rgb(16 185 129 / 0.4)",
-      "rgb(74 222 128 / 0.45)",
+      "oklch(0.5 0.13 256 / 0.45)",
+      "oklch(0.64 0.08 250 / 0.36)",
+      "oklch(0.55 0.11 254 / 0.4)",
     ],
     learningRecipeId: "ocr-document-extraction",
-  },
-  {
-    title: "Text to Python",
-    description:
-      "Instruction-to-code pairs for training models that generate clean Python implementations.",
-    icon: CodeIcon,
-    difficulty: "Intermediate",
-    learningBadges: ["LLM Judge", "LLM Code", "Subcategory", "Category"],
-    surfaceClassName:
-      "from-amber-500/15 via-orange-500/5 to-transparent dark:from-amber-400/30 dark:via-orange-400/14 dark:to-amber-950/16",
-    shineColor: [
-      "rgb(245 158 11 / 0.45)",
-      "rgb(249 115 22 / 0.4)",
-      "rgb(251 146 60 / 0.45)",
-    ],
-    learningRecipeId: "text-to-python",
-  },
-  {
-    title: "Text to SQL",
-    description:
-      "Natural language to SQL pairs, including schema-aware query construction patterns.",
-    icon: Database02Icon,
-    difficulty: "Intermediate",
-    learningBadges: ["LLM Code", "Prompting", "Drop Columns"],
-    surfaceClassName:
-      "from-blue-500/15 via-indigo-500/5 to-transparent dark:from-blue-400/30 dark:via-indigo-400/14 dark:to-blue-950/16",
-    shineColor: [
-      "rgb(59 130 246 / 0.45)",
-      "rgb(99 102 241 / 0.4)",
-      "rgb(96 165 250 / 0.45)",
-    ],
-    learningRecipeId: "text-to-sql",
   },
   {
     title: "Structured Outputs + Jinja Expressions",
@@ -154,11 +95,11 @@ const TEMPLATE_CARDS: TemplateCard[] = [
     difficulty: "Advanced",
     learningBadges: ["Structured LLM", "Expression", "Jinja"],
     surfaceClassName:
-      "from-cyan-500/15 via-sky-500/5 to-transparent dark:from-cyan-400/30 dark:via-sky-400/14 dark:to-cyan-950/16",
+      "from-sky-500/14 via-primary/8 to-transparent dark:from-sky-400/22 dark:via-primary/12 dark:to-slate-900/20",
     shineColor: [
-      "rgb(6 182 212 / 0.45)",
-      "rgb(56 189 248 / 0.4)",
-      "rgb(34 211 238 / 0.45)",
+      "oklch(0.58 0.1 250 / 0.4)",
+      "oklch(0.45 0.14 256 / 0.45)",
+      "oklch(0.52 0.1 256 / 0.4)",
     ],
     learningRecipeId: "structured-outputs-jinja",
   },
@@ -432,36 +373,14 @@ export function DataRecipesPage(): ReactElement {
             </p>
           </div>
         ) : recipes.length === 0 ? (
-          <Empty className="mt-8 border border-dashed border-border/70">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <HugeiconsIcon icon={CookBookIcon} className="size-5" />
-              </EmptyMedia>
-              <EmptyTitle>No recipes yet</EmptyTitle>
-              <EmptyDescription>
-                Browse Learning Recipes below to understand how recipe workflows
-                work.
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent className="max-w-6xl items-stretch">
-              {/*<Button*/}
-              {/*  type="button"*/}
-              {/*  variant="secondary"*/}
-              {/*  className="mx-auto"*/}
-              {/*  onClick={() => setLearningDialogOpen(true)}*/}
-              {/*  disabled={isBusy}*/}
-              {/*>*/}
-              {/*  <HugeiconsIcon icon={CookBookIcon} className="size-4" />*/}
-              {/*  Start Tutorial*/}
-              {/*</Button>*/}
-              <LearningRecipeCards
-                onSelect={(template) => {
-                  openLearningRecipe(template).catch(() => undefined);
-                }}
-                loadingTemplateId={loadingTemplateId}
-              />
-            </EmptyContent>
-          </Empty>
+          <div className="mt-8 max-w-6xl">
+            <LearningRecipeCards
+              onSelect={(template) => {
+                openLearningRecipe(template).catch(() => undefined);
+              }}
+              loadingTemplateId={loadingTemplateId}
+            />
+          </div>
         ) : (
           <div className="mt-8 space-y-2">
             {recipes.map((recipe) => (

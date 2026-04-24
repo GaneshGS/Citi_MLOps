@@ -5,7 +5,6 @@ import type {
   LlmConfig,
   LlmMcpProviderConfig,
   LlmToolConfig,
-  MarkdownNoteConfig,
   NodeConfig,
   RecipeProcessorConfig,
   SeedConfig,
@@ -48,14 +47,18 @@ type UiInput = {
   unstructured_file_sizes?: unknown;
   unstructured_chunk_size?: unknown;
   unstructured_chunk_overlap?: unknown;
+  gssp_enabled?: unknown;
+  gssp_endpoint?: unknown;
+  gssp_path?: unknown;
+  gssp_auth_token?: unknown;
+  gssp_x_correlation_id?: unknown;
+  gssp_x_application_id?: unknown;
+  gssp_x_soeid?: unknown;
+  gssp_x_model_name?: unknown;
+  gssp_x_max_tokens?: unknown;
+  gssp_x_authorization_coin?: unknown;
+  gssp_request_template?: unknown;
   advanced_open_by_node?: unknown;
-};
-
-type UiMarkdownNoteNode = {
-  name: string;
-  markdown: string;
-  note_color?: string;
-  note_opacity?: string;
 };
 
 function readStringNumber(value: unknown): string | undefined {
@@ -230,33 +233,6 @@ function cloneMcpProvider(config: LlmMcpProviderConfig): LlmMcpProviderConfig {
   };
 }
 
-function parseUiMarkdownNoteNodes(input: unknown): UiMarkdownNoteNode[] {
-  if (!Array.isArray(input)) {
-    return [];
-  }
-  const noteNodes: UiMarkdownNoteNode[] = [];
-  for (const node of input) {
-    if (!isRecord(node)) {
-      continue;
-    }
-    const nodeType = readString(node.node_type) ?? readString(node.type);
-    if (nodeType !== "markdown_note") {
-      continue;
-    }
-    const name = readString(node.name) ?? readString(node.id);
-    if (!name?.trim()) {
-      continue;
-    }
-    noteNodes.push({
-      name: name.trim(),
-      markdown: readString(node.markdown) ?? "",
-      note_color: readString(node.note_color) ?? undefined,
-      note_opacity: readStringNumber(node.note_opacity) ?? undefined,
-    });
-  }
-  return noteNodes;
-}
-
 function parseUiToolProfileNodes(input: unknown): Map<string, Record<string, string[]>> {
   const toolProfiles = new Map<string, Record<string, string[]>>();
   if (!Array.isArray(input)) {
@@ -424,28 +400,22 @@ export function importRecipePayload(input: string): ImportResult {
   const uiUnstructuredChunkOverlap = readStringNumber(
     ui?.unstructured_chunk_overlap,
   );
+  const uiGsspEnabled =
+    typeof ui?.gssp_enabled === "boolean" ? ui.gssp_enabled : undefined;
+  const uiGsspEndpoint = readString(ui?.gssp_endpoint) ?? undefined;
+  const uiGsspPath = readString(ui?.gssp_path) ?? undefined;
+  const uiGsspAuthToken = readString(ui?.gssp_auth_token) ?? undefined;
+  const uiGsspCorrelationId = readString(ui?.gssp_x_correlation_id) ?? undefined;
+  const uiGsspApplicationId = readString(ui?.gssp_x_application_id) ?? undefined;
+  const uiGsspSoeid = readString(ui?.gssp_x_soeid) ?? undefined;
+  const uiGsspModelName = readString(ui?.gssp_x_model_name) ?? undefined;
+  const uiGsspMaxTokens = readString(ui?.gssp_x_max_tokens) ?? undefined;
+  const uiGsspAuthorizationCoin =
+    readString(ui?.gssp_x_authorization_coin) ?? undefined;
+  const uiGsspRequestTemplate =
+    readString(ui?.gssp_request_template) ?? undefined;
   const uiAdvancedOpenByNode = parseAdvancedOpenByNode(ui?.advanced_open_by_node);
-  const uiMarkdownNotes = parseUiMarkdownNoteNodes(ui?.nodes);
   const uiToolProfilesByName = parseUiToolProfileNodes(ui?.nodes);
-
-  for (const note of uiMarkdownNotes) {
-    const id = `n${nextId}`;
-    nextId += 1;
-    const config: MarkdownNoteConfig = {
-      id,
-      kind: "markdown_note",
-      name: note.name,
-      markdown: note.markdown,
-      note_color: note.note_color ?? "#FDE68A",
-      note_opacity: note.note_opacity ?? "35",
-    };
-    if (nameToId.has(config.name)) {
-      errors.push(`Duplicate column name: ${config.name}.`);
-      continue;
-    }
-    nameToId.set(config.name, config.id);
-    configs.push(config);
-  }
 
   if (recipe.seed_config) {
     const id = `n${nextId}`;
@@ -464,6 +434,17 @@ export function importRecipePayload(input: string): ImportResult {
       unstructuredFileSizes: uiUnstructuredFileSizes,
       unstructured_chunk_size: uiUnstructuredChunkSize,
       unstructured_chunk_overlap: uiUnstructuredChunkOverlap,
+      gssp_enabled: uiGsspEnabled,
+      gssp_endpoint: uiGsspEndpoint,
+      gssp_path: uiGsspPath,
+      gssp_auth_token: uiGsspAuthToken,
+      gssp_x_correlation_id: uiGsspCorrelationId,
+      gssp_x_application_id: uiGsspApplicationId,
+      gssp_x_soeid: uiGsspSoeid,
+      gssp_x_model_name: uiGsspModelName,
+      gssp_x_max_tokens: uiGsspMaxTokens,
+      gssp_x_authorization_coin: uiGsspAuthorizationCoin,
+      gssp_request_template: uiGsspRequestTemplate,
     });
     if (seedConfig) {
       applyAdvancedOpen(seedConfig, uiAdvancedOpenByNode);

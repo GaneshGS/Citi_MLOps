@@ -85,9 +85,7 @@ def get_unsloth_version() -> str:
     except PackageNotFoundError:
         pass
 
-    version_file = (
-        _Path(__file__).resolve().parents[2] / "unsloth" / "models" / "_utils.py"
-    )
+    version_file = _Path(__file__).resolve().parents[2] / "unsloth" / "_version.py"
     try:
         for line in version_file.read_text(encoding = "utf-8").splitlines():
             if line.startswith("__version__ = "):
@@ -125,20 +123,6 @@ async def lifespan(app: FastAPI):
         structlog.get_logger(__name__).warning(
             "cleanup_orphaned_runs failed at startup: %s", exc
         )
-
-    # Pre-cache the helper GGUF model for LLM-assisted dataset detection.
-    # Runs in a background thread so it doesn't block server startup.
-    import threading
-
-    def _precache():
-        try:
-            from utils.datasets.llm_assist import precache_helper_gguf
-
-            precache_helper_gguf()
-        except Exception:
-            pass  # non-critical
-
-    threading.Thread(target = _precache, daemon = True).start()
 
     if storage.ensure_default_admin():
         bootstrap_pw = storage.get_bootstrap_password()

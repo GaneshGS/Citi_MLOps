@@ -1057,8 +1057,7 @@ shell.Run cmd, 0, False
     }
 
     # ── Run studio setup ──
-    # setup.ps1 will handle installing Git, CMake, Visual Studio Build Tools,
-    # CUDA Toolkit, Node.js, and other dependencies automatically via winget.
+    # setup.ps1 will handle installing Git, Node.js, Python, and other dependencies automatically via winget.
     Write-TauriLog "STEP" "Running studio setup"
     step "setup" "running unsloth studio setup..."
     $UnslothExe = Join-Path $VenvDir "Scripts\unsloth.exe"

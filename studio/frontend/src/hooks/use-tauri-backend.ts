@@ -166,7 +166,7 @@ export function useTauriBackend() {
             await startRepair();
           } else {
             setBackendError(
-              "Managed Studio install is too old. Run `unsloth studio update`.",
+              "Managed install is too old. Update the app (Settings → About → Updates) or use your installer's update path.",
             );
           }
           return;
@@ -215,7 +215,7 @@ export function useTauriBackend() {
       if (msg.includes("already running")) {
         startingRef.current = false;
         setBackendError(
-          "Managed server is already running but did not report a port. Restart Studio and try again.",
+          "Managed server is already running but did not report a port. Restart Plane and try again.",
         );
         return;
       }
@@ -461,7 +461,7 @@ export function useTauriBackend() {
       const detail =
         event instanceof CustomEvent && typeof event.detail === "string"
           ? event.detail
-          : "Desktop authentication failed. Update or repair the managed Studio install, then restart Studio.";
+          : "Desktop authentication failed. Update or repair the managed Plane install, then restart Plane.";
       setAuthFailure(detail);
     };
     window.addEventListener("tauri-auth-failed", onAuthFailed);

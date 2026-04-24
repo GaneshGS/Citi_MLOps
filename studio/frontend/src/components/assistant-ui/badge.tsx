@@ -22,7 +22,7 @@ const badgeVariants = cva(
         warning:
           "bg-amber-100 text-amber-700 hover:bg-amber-100/80 dark:bg-amber-900/50 dark:text-amber-300",
         success:
-          "bg-emerald-100 text-emerald-700 hover:bg-emerald-100/80 dark:bg-emerald-900/50 dark:text-emerald-300",
+          "bg-primary/12 text-primary hover:bg-primary/15 dark:bg-primary/20 dark:text-primary",
         destructive:
           "bg-red-100 text-red-700 hover:bg-red-100/80 dark:bg-red-900/50 dark:text-red-300",
       },

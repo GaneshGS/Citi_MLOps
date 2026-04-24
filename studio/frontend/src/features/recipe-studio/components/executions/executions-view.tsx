@@ -385,7 +385,7 @@ export function ExecutionsView({
                       className={cn(
                         "size-4",
                         progressComplete
-                          ? "text-emerald-700 dark:text-emerald-300"
+                          ? "text-primary dark:text-primary"
                           : "text-amber-700 dark:text-amber-300",
                       )}
                     />

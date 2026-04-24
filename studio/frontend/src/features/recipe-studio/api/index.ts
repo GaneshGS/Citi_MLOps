@@ -143,6 +143,13 @@ export type ValidateError = {
   message: string;
   path?: string | null;
   code?: string | null;
+  hint?: string | null;
+  // biome-ignore lint/style/useNamingConvention: api schema
+  field_path?: string | null;
+  // biome-ignore lint/style/useNamingConvention: api schema
+  block_name?: string | null;
+  // biome-ignore lint/style/useNamingConvention: api schema
+  block_id?: string | null;
 };
 
 export type ValidateResponse = {

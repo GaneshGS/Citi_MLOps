@@ -80,7 +80,7 @@ export function SettingsDialog() {
       >
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">
-          Manage your Unsloth Studio preferences.
+          Manage your Citi MLOps preferences.
         </DialogDescription>
         <div className="flex h-full min-h-0">
           <aside className="font-heading flex w-[200px] shrink-0 flex-col border-r border-border bg-muted/20 p-2">

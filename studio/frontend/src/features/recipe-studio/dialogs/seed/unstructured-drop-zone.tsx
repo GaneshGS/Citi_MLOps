@@ -203,7 +203,7 @@ export function UnstructuredDropZone({
                 <HugeiconsIcon icon={Loading03Icon} className="text-muted-foreground size-4 animate-spin" />
               )}
               {entry.status === "ok" && (
-                <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-4 text-green-500" />
+                <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-4 text-primary" />
               )}
               {entry.status === "error" && (
                 <HugeiconsIcon icon={Alert02Icon} className="size-4 text-red-500" />

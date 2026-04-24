@@ -36,10 +36,8 @@ import {
   ColumnInsertIcon,
   CursorInfo02Icon,
   Delete02Icon,
-  Download03Icon,
   GemIcon,
   MessageSearch01Icon,
-  Search01Icon,
   NewReleasesIcon,
   PowerIcon,
   PencilEdit02Icon,
@@ -65,7 +63,6 @@ import {
   deleteChatItem,
 } from "@/features/chat/hooks/use-chat-sidebar-items";
 import { useChatRuntimeStore } from "@/features/chat/stores/chat-runtime-store";
-import { useChatSearchStore } from "@/features/chat/stores/chat-search-store";
 import { ChatSearchDialog } from "@/features/chat/components/chat-search-dialog";
 import { useTrainingHistorySidebarItems, deleteTrainingRun } from "@/features/training";
 import type { TrainingRunSummary } from "@/features/training";
@@ -75,7 +72,6 @@ import { removeTrainingUnloadGuard } from "@/features/training/hooks/use-trainin
 
 function getTourId(pathname: string): string | null {
   if (pathname.startsWith("/studio")) return "studio";
-  if (pathname.startsWith("/export")) return "export";
   if (pathname.startsWith("/chat")) return "chat";
   return null;
 }
@@ -85,7 +81,7 @@ function runStatusDotClass(status: TrainingRunSummary["status"]): string {
     case "running":
       return "bg-blue-500 animate-pulse";
     case "completed":
-      return "bg-emerald-500";
+      return "bg-primary";
     case "stopped":
       return "bg-amber-500";
     case "error":
@@ -237,15 +233,15 @@ export function AppSidebar() {
               });
             }}
             className="flex items-center gap-[6px] select-none"
-            aria-label="Unsloth home"
+            aria-label="Citi MLOps home"
           >
             <img
-              src="/circle-logo-small.png"
-              alt="Unsloth"
-              className="h-[34px] w-[34px] rounded-full object-cover"
+              src="/brand/citi-on-blue.png"
+              alt="Citibank"
+              className="h-[34px] w-[34px] shrink-0 object-contain"
             />
-            <span className="font-heading text-[21px] font-semibold tracking-[-0.01em] dark:tracking-[0.02em] leading-none text-black dark:text-white">
-              unsloth
+            <span className="font-heading text-[19px] font-semibold tracking-[-0.01em] dark:tracking-[0.02em] leading-tight text-black dark:text-white">
+              Citi MLOps
             </span>
             <span
               style={{ fontFamily: '"Inter Variable", ui-sans-serif, system-ui, sans-serif' }}
@@ -300,7 +296,7 @@ export function AppSidebar() {
           <SidebarMenu>
             <NavItem
               icon={PencilEdit02Icon}
-              label="New Chat"
+              label="Model Testing"
               active={false}
               disabled={chatDisabled}
               onClick={() => {
@@ -312,7 +308,7 @@ export function AppSidebar() {
             />
             <NavItem
               icon={ColumnInsertIcon}
-              label="Compare"
+              label="Compare Models"
               active={!!search.compare && !chatItems.some((i) => i.id === search.compare)}
               disabled={chatDisabled}
               dataTour="chat-compare"
@@ -320,17 +316,6 @@ export function AppSidebar() {
                 if (chatDisabled) return;
                 setActiveThreadId(null);
                 navigate({ to: "/chat", search: { compare: createNavigationNonce() } });
-                closeMobileIfOpen();
-              }}
-            />
-            <NavItem
-              icon={Search01Icon}
-              label="Search"
-              active={false}
-              disabled={chatDisabled}
-              onClick={() => {
-                if (chatDisabled) return;
-                useChatSearchStore.getState().open();
                 closeMobileIfOpen();
               }}
             />
@@ -345,7 +330,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <NavItem
                 icon={GemIcon}
-                label="Train"
+                label="Finetune"
                 active={pathname === "/studio" || pathname.startsWith("/studio/")}
                 disabled={chatOnly}
                 onClick={() => {
@@ -357,22 +342,10 @@ export function AppSidebar() {
 
               <NavItem
                 icon={ChefHatIcon}
-                label="Recipes"
+                label="Training Data Preparation"
                 active={isRecipesRoute}
                 onClick={() => {
                   navigate({ to: "/data-recipes" });
-                  closeMobileIfOpen();
-                }}
-              />
-
-              <NavItem
-                icon={Download03Icon}
-                label="Export"
-                active={pathname === "/export" || pathname.startsWith("/export/")}
-                disabled={chatOnly}
-                onClick={() => {
-                  if (chatOnly) return;
-                  navigate({ to: "/export" });
                   closeMobileIfOpen();
                 }}
               />
@@ -380,7 +353,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Recent Chats — hide on Studio only (Eyera fac13); chatOpen = ec695 clickability */}
+        {/* Recent Chats — hide on /studio route (Eyera fac13); chatOpen = ec695 clickability */}
         {!isStudioRoute && chatItems.length > 0 && (
           <Collapsible open={chatOpen} onOpenChange={setChatOpen} asChild>
           <SidebarGroup className="group-data-[collapsible=icon]:hidden overflow-hidden px-2 py-0">
@@ -529,7 +502,7 @@ export function AppSidebar() {
                   </div>
                   <div className="flex flex-col gap-0.5 leading-none group-data-[collapsible=icon]:hidden">
                     <span className="truncate font-heading text-[13px] tracking-[0.02em] font-semibold text-[#383835] dark:text-[#c7c7c4]">{displayTitle}</span>
-                    <span className="truncate text-[11px] tracking-[0.01em] text-muted-foreground">Studio</span>
+                    <span className="truncate text-[11px] tracking-[0.01em] text-muted-foreground">Plane</span>
                   </div>
                   <ChevronsUpDown strokeWidth={1.25} className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>

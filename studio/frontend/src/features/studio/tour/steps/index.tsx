@@ -2,7 +2,6 @@
 // Copyright 2026-present the Unsloth AI Inc. team. All rights reserved. See /studio/LICENSE.AGPL-3.0
 
 import type { TourStep } from "@/features/tour";
-import { studioBaseModelStep } from "./base-model";
 import { studioDatasetStep } from "./dataset";
 import { studioLocalModelStep } from "./local-model";
 import { studioMethodStep } from "./method";
@@ -14,7 +13,6 @@ import { studioStartStep } from "./start";
 export const studioTourSteps: TourStep[] = [
   studioNavStep,
   studioLocalModelStep,
-  studioBaseModelStep,
   studioMethodStep,
   studioDatasetStep,
   studioParamsStep,

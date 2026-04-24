@@ -131,7 +131,7 @@ export function DatasetMappingCard({
       className={cn(
         "rounded-xl corner-squircle ring-1 px-5 py-4 mb-4",
         mappingOk
-          ? "ring-emerald-200/70 bg-emerald-50/70 text-emerald-950 dark:ring-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-50"
+          ? "ring-primary/25 bg-primary/8 text-foreground dark:ring-primary/40 dark:bg-primary/15 dark:text-foreground"
           : "ring-amber-200/70 bg-amber-50/70 text-amber-950 dark:ring-amber-900/50 dark:bg-amber-950/30 dark:text-amber-50",
       )}
     >
@@ -139,7 +139,7 @@ export function DatasetMappingCard({
         <div
           className={cn(
             "rounded-xl corner-squircle p-2 shrink-0",
-            mappingOk ? "bg-emerald-500/15" : "bg-amber-500/15",
+            mappingOk ? "bg-primary/12" : "bg-amber-500/15",
           )}
         >
           <HugeiconsIcon
@@ -147,7 +147,7 @@ export function DatasetMappingCard({
             className={cn(
               "size-4",
               mappingOk
-                ? "text-emerald-700 dark:text-emerald-300"
+                ? "text-primary dark:text-primary"
                 : "text-amber-700 dark:text-amber-300",
             )}
           />
@@ -162,7 +162,7 @@ export function DatasetMappingCard({
             className={cn(
               "text-xs mt-0.5",
               mappingOk
-                ? "text-emerald-800/80 dark:text-emerald-200/80"
+                ? "text-foreground/80 dark:text-foreground/80"
                 : "text-amber-800/80 dark:text-amber-200/80",
             )}
           >

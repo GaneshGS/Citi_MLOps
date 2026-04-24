@@ -106,7 +106,7 @@ export function parseAnalysisColumns(
 
 export function statusTone(status: RecipeExecutionStatus): string {
   if (status === "completed") {
-    return "border-emerald-500/30 text-emerald-700 dark:text-emerald-300";
+    return "border-primary/30 text-primary dark:text-primary";
   }
   if (status === "error" || status === "cancelled") {
     return "border-red-500/30 text-red-700 dark:text-red-300";
@@ -119,7 +119,7 @@ export function statusTone(status: RecipeExecutionStatus): string {
 
 export function statusRightBorder(status: RecipeExecutionStatus): string {
   if (status === "completed") {
-    return "border-r-emerald-500/40";
+    return "border-r-primary/40";
   }
   if (status === "error" || status === "cancelled") {
     return "border-r-red-500/40";

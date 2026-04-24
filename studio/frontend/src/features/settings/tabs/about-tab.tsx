@@ -50,11 +50,11 @@ export function AboutTab() {
       <header className="flex flex-col gap-1">
         <h1 className="text-lg font-semibold font-heading">About</h1>
         <p className="text-xs text-muted-foreground">
-          Unsloth Studio build info and support.
+          Citi MLOps build info and support.
         </p>
       </header>
 
-      <SettingsSection title="Studio">
+      <SettingsSection title="Application">
         <SettingsRow label="Version">
           <code className="font-mono text-xs text-muted-foreground">{version}</code>
         </SettingsRow>
@@ -75,7 +75,7 @@ export function AboutTab() {
             className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
           >
             <HugeiconsIcon icon={Book03Icon} className="size-3.5" />
-            unsloth.ai/docs
+            Documentation
             <HugeiconsIcon icon={ArrowUpRight01Icon} className="size-3" />
           </a>
         </SettingsRow>
@@ -96,8 +96,8 @@ export function AboutTab() {
       <SettingsSection title="Danger zone">
         <SettingsRow
           destructive
-          label="Shut down Unsloth Studio"
-          description="Stops the Studio server process and ends your session."
+          label="Shut down Citi MLOps"
+          description="Stops the Plane server process and ends your session."
         >
           <Button
             variant="outline"

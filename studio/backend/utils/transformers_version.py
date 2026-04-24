@@ -393,9 +393,6 @@ _PURGE_PREFIXES = (
     # Our own modules that import from transformers at module level
     # (e.g. model_config.py: `from transformers import AutoConfig`)
     "utils.models",
-    "core.training",
-    "core.inference",
-    "core.export",
 )
 
 

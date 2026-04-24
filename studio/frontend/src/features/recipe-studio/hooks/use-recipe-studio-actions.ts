@@ -74,6 +74,14 @@ type UseRecipeStudioActionsResult = {
     valid: boolean;
     errors: string[];
     rawDetail: string | null;
+    details: Array<{
+      message: string;
+      code?: string | null;
+      hint?: string | null;
+      fieldPath?: string | null;
+      blockName?: string | null;
+      blockId?: string | null;
+    }>;
   } | null;
   runPreview: () => Promise<boolean>;
   runFull: () => Promise<boolean>;

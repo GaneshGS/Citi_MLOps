@@ -47,11 +47,11 @@ export function ApiKeyRow({
   apiKey: ApiKey;
   onRevoke: (key: ApiKey) => void;
 }) {
-  const prefix = `sk-unsloth-${apiKey.key_prefix}…`;
+  const prefix = `sk-…${apiKey.key_prefix}…`;
   return (
     <div className="group flex items-center gap-3 border-b border-border/60 px-1 py-3 last:border-b-0 transition-colors hover:bg-accent/40">
       <span
-        className="size-1.5 shrink-0 rounded-full bg-emerald-500"
+        className="size-1.5 shrink-0 rounded-full bg-primary"
         aria-hidden="true"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">

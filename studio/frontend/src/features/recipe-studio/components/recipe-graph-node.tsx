@@ -456,17 +456,19 @@ function RecipeGraphNodeBase({
     runtimeState === "running"
       ? "border-primary/70 ring-2 ring-primary/20 shadow-md"
       : runtimeState === "done"
-        ? "border-emerald-500/60 ring-1 ring-emerald-500/20"
+        ? "border-primary/60 ring-1 ring-primary/20"
         : "";
   const hasConnectionIssue =
     connectionStatus.isDisconnected ||
     connectionStatus.missingDataInput;
+  const blockRole = data.kind === "note" ? "Informational" : "Functional";
 
   return (
     <BaseNode
       className={cn(
         "corner-squircle relative w-full min-w-0 overflow-visible rounded-4xl border-border/60 shadow-sm",
         runtimeNodeTone,
+        data.guidedFocus && "ring-2 ring-primary/35 border-primary/60",
         hasConnectionIssue &&
           runtimeState === "idle" &&
           "opacity-80 border-dashed border-amber-400/70",
@@ -512,6 +514,9 @@ function RecipeGraphNodeBase({
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+            {blockRole}
+          </Badge>
           {canShowLlmAux && (
             <Button
               type="button"

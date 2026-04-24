@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright 2026-present the Unsloth AI Inc. team. All rights reserved. See /studio/LICENSE.AGPL-3.0
 
-import time
 from pathlib import Path
 from typing import Optional
 
@@ -87,58 +86,9 @@ def train(
         )
         raise typer.Exit(code = 2)
 
-    from studio.backend.core.training.trainer import UnslothTrainer
-
-    trainer = UnslothTrainer()
-
-    # Load model (trainer.is_vlm is set after this)
-    if not trainer.load_model(
-        model_name = cfg.model,
-        max_seq_length = cfg.training.max_seq_length,
-        load_in_4bit = cfg.training.load_in_4bit if use_lora else False,
-        hf_token = hf_token,
-    ):
-        typer.echo("Model load failed", err = True)
-        raise typer.Exit(code = 1)
-
-    is_vision = trainer.is_vlm
-
-    if not trainer.prepare_model_for_training(**cfg.model_kwargs(use_lora, is_vision)):
-        typer.echo("Model preparation failed", err = True)
-        raise typer.Exit(code = 1)
-
-    result = trainer.load_and_format_dataset(
-        dataset_source = cfg.data.dataset or "",
-        format_type = cfg.data.format_type,
-        local_datasets = cfg.data.local_dataset,
+    typer.echo(
+        "Error: The unsloth CLI train command is not available in this Citi-centric "
+        "repository. Use your orchestration training services instead.",
+        err = True,
     )
-    if result is None:
-        typer.echo("Dataset load failed", err = True)
-        raise typer.Exit(code = 1)
-
-    ds, eval_ds = result
-
-    training_kwargs = cfg.training_kwargs()
-    training_kwargs["wandb_token"] = wandb_token  # CLI/env takes precedence
-    started = trainer.start_training(
-        dataset = ds, eval_dataset = eval_ds, **training_kwargs
-    )
-
-    if not started:
-        typer.echo("Training failed to start", err = True)
-        raise typer.Exit(code = 1)
-
-    try:
-        while trainer.training_thread and trainer.training_thread.is_alive():
-            time.sleep(1)
-    except KeyboardInterrupt:
-        typer.echo("Stopping training (Ctrl+C detected)...")
-        trainer.stop_training()
-    finally:
-        if trainer.training_thread:
-            trainer.training_thread.join()
-
-    final = trainer.get_training_progress()
-    if getattr(final, "error", None):
-        typer.echo(f"Training error: {final.error}", err = True)
-        raise typer.Exit(code = 1)
+    raise typer.Exit(code = 2)

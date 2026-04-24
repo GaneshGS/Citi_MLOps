@@ -2049,45 +2049,9 @@ class ModelConfig:
             # Check if the HF repo contains GGUF files
             gguf_filename = detect_gguf_model_remote(identifier, hf_token = hf_token)
             if gguf_filename:
-                # Preflight: verify llama-server binary exists BEFORE user waits
-                # for a multi-GB download that llama-server handles natively
-                from core.inference.llama_cpp import LlamaCppBackend
-
-                if not LlamaCppBackend._find_llama_server_binary():
-                    raise RuntimeError(
-                        "llama-server binary not found — cannot load GGUF models. "
-                        "Run setup.sh to build it, or set LLAMA_SERVER_PATH."
-                    )
-
-                # Use list_gguf_variants() to detect vision & resolve variant
-                variants, has_vision = list_gguf_variants(identifier, hf_token = hf_token)
-                variant = gguf_variant
-                if not variant:
-                    # Auto-select best quantization
-                    variant_filenames = [v.filename for v in variants]
-                    best = _pick_best_gguf(variant_filenames)
-                    if best:
-                        variant = _extract_quant_label(best)
-                    else:
-                        variant = "Q4_K_M"  # Fallback — llama-server's own default
-
-                display_name = f"{identifier.split('/')[-1]} ({variant})"
-                logger.info(
-                    f"Detected remote GGUF repo '{identifier}', "
-                    f"variant={variant}, vision={has_vision}"
-                )
-                return cls(
-                    identifier = identifier,
-                    display_name = display_name,
-                    path = identifier,
-                    is_local = False,
-                    is_cached = False,
-                    is_vision = has_vision,
-                    is_lora = False,
-                    is_gguf = True,
-                    gguf_file = None,
-                    gguf_hf_repo = identifier,
-                    gguf_variant = variant,
+                raise RuntimeError(
+                    "Local GGUF repos are not supported in this Citi-centric build. "
+                    "Use Citi Model Garden or GSSP for hosted inference instead."
                 )
 
         # Auto-detect LoRA for local paths (check adapter_config.json on disk)

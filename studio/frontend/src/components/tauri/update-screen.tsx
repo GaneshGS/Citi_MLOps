@@ -28,8 +28,21 @@ function Spinner({ size = 24 }: { size?: number }) {
 function Logo() {
   return (
     <div className="flex flex-col items-center gap-4">
-      <img src="/sticker.png" alt="Unsloth" className="h-[72px] w-[72px] object-contain" />
-      <img src="/studio.png" alt="Unsloth Studio" className="h-auto w-[250px] object-contain dark:invert" />
+      <img
+        src="/brand/citi-on-blue.png"
+        alt="Citibank"
+        className="h-[72px] w-[72px] object-contain"
+      />
+      <img
+        src="/brand/citi-primary.png"
+        alt=""
+        className="h-auto w-[250px] max-w-full object-contain dark:hidden"
+      />
+      <img
+        src="/brand/citi-on-blue.png"
+        alt=""
+        className="hidden h-auto max-h-[100px] w-[min(100%,250px)] object-contain dark:block"
+      />
     </div>
   );
 }

@@ -6,12 +6,12 @@ import { ReadMore, type TourStep } from "@/features/tour";
 export const studioLocalModelStep: TourStep = {
   id: "local-model",
   target: "studio-local-model",
-  title: "Local model path",
+  title: "Model catalog",
   body: (
     <>
-      Use this if you already downloaded weights locally (eg{" "}
-      <span className="font-mono">./models/...</span>) to avoid re-downloading.
-      Folder should look like a Hugging Face model (config + tokenizer + weights).{" "}
+      Pick a base model from the internal catalog (or type a model id your
+      environment exposes). Select a size that fits your task and VRAM; you can
+      start smaller to iterate quickly.{" "}
       <ReadMore href="https://unsloth.ai/docs/basics/fine-tuning-llms-guide" />
     </>
   ),

@@ -4,10 +4,10 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 type FieldLabelProps = {
-  label: string;
+  label: ReactNode;
   htmlFor?: string;
   hint?: string;
 };
@@ -32,8 +32,8 @@ export function FieldLabel({
             <button
               type="button"
               className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground/80 transition hover:text-foreground"
-              aria-label={`More info: ${label}`}
-              title={`More info about ${label}`}
+              aria-label="More field info"
+              title="More field info"
             >
               <HugeiconsIcon icon={InformationCircleIcon} className="size-4" />
             </button>

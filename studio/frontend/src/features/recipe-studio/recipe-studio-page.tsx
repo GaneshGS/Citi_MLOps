@@ -41,6 +41,7 @@ import {
 import { RecipeNode } from "./components/recipe-graph-node";
 import { RecipeGraphSemanticEdge } from "./components/recipe-graph-semantic-edge";
 import { RecipeStudioHeader } from "./components/recipe-studio-header";
+import { RequiredActionsPanel } from "./components/required-actions-panel";
 import { DataEdge } from "./components/rf-ui/data-edge";
 import { ExecutionProgressIsland } from "./components/runtime/execution-progress-island";
 import { ConfigDialog } from "./dialogs/config-dialog";
@@ -106,6 +107,7 @@ export type RecipeStudioPageProps = {
   initialRecipeName: string;
   initialPayload: RecipePayload;
   initialSavedAt: number;
+  learningRecipeId?: string;
   onPersistRecipe: (input: PersistRecipeInput) => Promise<PersistRecipeResult>;
 };
 
@@ -114,6 +116,7 @@ export function RecipeStudioPage({
   initialRecipeName,
   initialPayload,
   initialSavedAt,
+  learningRecipeId,
   onPersistRecipe,
 }: RecipeStudioPageProps): ReactElement {
   const {
@@ -358,6 +361,35 @@ export function RecipeStudioPage({
   const canvasInteractive = interactive && !executionLocked;
   const runBusy = previewLoading || fullLoading || executionLocked;
   const islandExecution = activeExecution ?? recentCompletedExecution;
+  const graphWarnings = useMemo(
+    () => getGraphWarnings(configs, edges),
+    [configs, edges],
+  );
+  const guidedFlowEnabled = learningRecipeId === "pdf-grounded-qa";
+  const guidedFocusNodeId = useMemo(() => {
+    if (!guidedFlowEnabled) {
+      return null;
+    }
+    const missingWarning = graphWarnings.find(
+      (warning) => warning.severity === "error" && warning.nodeId,
+    );
+    return missingWarning?.nodeId ?? null;
+  }, [graphWarnings, guidedFlowEnabled]);
+  const guidedDisplayGraph = useMemo(
+    () => ({
+      nodes: displayGraph.nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          ...(guidedFlowEnabled && {
+            guidedFocus: node.id === guidedFocusNodeId,
+          }),
+        },
+      })),
+      edges: displayGraph.edges,
+    }),
+    [displayGraph.edges, displayGraph.nodes, guidedFlowEnabled, guidedFocusNodeId],
+  );
 
   const toggleInteractive = useCallback(() => {
     if (executionLocked) {
@@ -365,6 +397,26 @@ export function RecipeStudioPage({
     }
     setInteractive((value) => !value);
   }, [executionLocked]);
+
+  const focusNode = useCallback(
+    (nodeId: string) => {
+      if (!reactFlowInstance) {
+        return;
+      }
+      const node = reactFlowInstance.getNode(nodeId);
+      if (!node) {
+        return;
+      }
+      const width = node.measured?.width ?? 320;
+      const height = node.measured?.height ?? 180;
+      reactFlowInstance.setCenter(
+        node.position.x + width / 2,
+        node.position.y + height / 2,
+        { zoom: 1, duration: 350 },
+      );
+    },
+    [reactFlowInstance],
+  );
 
   useEffect(() => {
     setExecutionLocked(executionLocked);
@@ -575,8 +627,8 @@ export function RecipeStudioPage({
         onInit={setReactFlowInstance}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        nodes={displayGraph.nodes}
-        edges={displayGraph.edges}
+        nodes={guidedDisplayGraph.nodes}
+        edges={guidedDisplayGraph.edges}
         proOptions={{ hideAttribution: true }}
         nodeTypes={NODE_TYPES}
         edgeTypes={EDGE_TYPES}
@@ -710,6 +762,17 @@ export function RecipeStudioPage({
             void validateFromDialog();
           }}
         />
+        {guidedFlowEnabled && (
+          <RequiredActionsPanel
+            configs={configs}
+            nodes={displayGraph.nodes}
+            warnings={graphWarnings}
+            validateResult={validateResult}
+            runBusy={runBusy}
+            hasCompletedExecution={executions.some((item) => item.status === "completed")}
+            onFocusNode={focusNode}
+          />
+        )}
       </ReactFlow>
     );
   } else {
@@ -738,7 +801,7 @@ export function RecipeStudioPage({
             saveTone={saveTone}
             savedAtLabel={savedAtLabel}
             workflowName={workflowName}
-            warnings={getGraphWarnings(configs, edges)}
+            warnings={graphWarnings}
             onWorkflowNameChange={setWorkflowName}
             onViewChange={setActiveView}
             onSaveRecipe={() => {

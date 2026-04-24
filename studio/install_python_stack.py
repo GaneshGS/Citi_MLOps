@@ -818,6 +818,41 @@ def pip_install(
             temp_req.unlink(missing_ok = True)
 
 
+def _install_local_plugin_from_temp_wheel(plugin_dir: Path) -> None:
+    """Windows-safe local plugin install.
+
+    Build a wheel into a temporary directory and install from that wheel path.
+    This avoids setuptools writing *.egg-info into source trees that may live
+    under locked or policy-managed AppData directories.
+    """
+    with tempfile.TemporaryDirectory(prefix = "unsloth-dd-plugin-wheel-") as td:
+        wheel_dir = Path(td)
+        build_cmd = [
+            sys.executable,
+            "-m",
+            "pip",
+            "wheel",
+            "--no-deps",
+            "--wheel-dir",
+            str(wheel_dir),
+            str(plugin_dir),
+        ]
+        run("Building local data-designer plugin wheel", build_cmd)
+        wheels = sorted(wheel_dir.glob("*.whl"))
+        if not wheels:
+            raise RuntimeError(
+                f"Failed to build plugin wheel from {plugin_dir}: no wheel produced."
+            )
+        wheel_path = wheels[0]
+        pip_install(
+            "Installing local data-designer unstructured plugin (wheel)",
+            "--no-cache-dir",
+            "--no-deps",
+            str(wheel_path),
+            constrain = False,
+        )
+
+
 def download_file(url: str, dest: Path) -> None:
     """Download a file using urllib (no curl dependency)."""
     urllib.request.urlretrieve(url, dest)
@@ -1144,13 +1179,16 @@ def install_python_stack() -> int:
         )
         return 1
     _progress("local plugin")
-    pip_install(
-        "Installing local data-designer unstructured plugin",
-        "--no-cache-dir",
-        "--no-deps",
-        str(LOCAL_DD_UNSTRUCTURED_PLUGIN),
-        constrain = False,
-    )
+    if IS_WINDOWS:
+        _install_local_plugin_from_temp_wheel(LOCAL_DD_UNSTRUCTURED_PLUGIN)
+    else:
+        pip_install(
+            "Installing local data-designer unstructured plugin",
+            "--no-cache-dir",
+            "--no-deps",
+            str(LOCAL_DD_UNSTRUCTURED_PLUGIN),
+            constrain = False,
+        )
 
     # 12. Patch metadata for single-env compatibility
     _progress("finalizing")

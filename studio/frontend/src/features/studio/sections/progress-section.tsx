@@ -39,7 +39,7 @@ import {
   ZapIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { type ReactElement, type ReactNode, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ChartSettingsSheet } from "./charts/chart-settings-sheet";
@@ -200,7 +200,7 @@ export function ProgressSection({
       icon={<HugeiconsIcon icon={ChartAverageIcon} className="size-5" />}
       title="Training Progress"
       description={data.message || "Live training metrics"}
-      accent="emerald"
+      accent="primary"
       className="shadow-border border border-border/60 bg-card/90 ring-0 backdrop-blur-sm"
       headerAction={
         isHistorical ? (
@@ -555,9 +555,6 @@ function MilestoneCallout({
           <Button size="xs" onClick={onCompareInChat}>
             Compare in Chat
           </Button>
-          <Button asChild={true} size="xs" variant="outline">
-            <Link to="/export">Export Model</Link>
-          </Button>
         </div>
       )}
     </div>
@@ -618,7 +615,7 @@ function GpuStat({
   const clamped = Math.max(0, Math.min(pct, max ?? 100));
   let barColor = "bg-red-500";
   if (clamped < 60) {
-    barColor = "bg-emerald-500";
+    barColor = "bg-primary";
   } else if (clamped < 95) {
     barColor = "bg-amber-500";
   }

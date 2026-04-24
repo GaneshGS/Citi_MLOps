@@ -9,12 +9,6 @@ const structuredOutputsJinjaUrl = new URL(
 ).href;
 const pdfGroundedQaUrl = new URL("./pdf-grounded-qa.json", import.meta.url)
   .href;
-const instructionFromAnswerUrl = new URL(
-  "./instruction-from-answer.json",
-  import.meta.url,
-).href;
-const textToPythonUrl = new URL("./text-to-python.json", import.meta.url).href;
-const textToSqlUrl = new URL("./text-to-sql.json", import.meta.url).href;
 const ocrDocumentExtractionUrl = new URL(
   "./ocr-document-extraction.json",
   import.meta.url,
@@ -92,6 +86,7 @@ export type LearningRecipeDef = {
   id: string;
   title: string;
   description: string;
+  guidedFlowId?: "pdf-grounded-qa";
   loadPayload: () => Promise<RecipePayload>;
 };
 
@@ -107,28 +102,8 @@ export const LEARNING_RECIPES: LearningRecipeDef[] = [
     id: "pdf-grounded-qa",
     title: "PDF Document QA",
     description: "Build grounded question-answer examples from PDF chunks.",
+    guidedFlowId: "pdf-grounded-qa",
     loadPayload: () => loadPayloadFromUrl(pdfGroundedQaUrl),
-  },
-  {
-    id: "instruction-from-answer",
-    title: "Instruction from Answer",
-    description:
-      "Use seed answer columns to generate high-quality instruction targets.",
-    loadPayload: () => loadPayloadFromUrl(instructionFromAnswerUrl),
-  },
-  {
-    id: "text-to-python",
-    title: "Text to Python",
-    description:
-      "Generate instruction-to-code data with category sampling and LLM judging.",
-    loadPayload: () => loadPayloadFromUrl(textToPythonUrl),
-  },
-  {
-    id: "text-to-sql",
-    title: "Text to SQL",
-    description:
-      "Generate SQL tasks and runnable SQL outputs with prompt-driven generation.",
-    loadPayload: () => loadPayloadFromUrl(textToSqlUrl),
   },
   {
     id: "ocr-document-extraction",

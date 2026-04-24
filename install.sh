@@ -3,7 +3,7 @@
 # Usage (curl):  curl -fsSL https://unsloth.ai/install.sh | sh
 # Usage (wget):  wget -qO- https://unsloth.ai/install.sh | sh
 # Usage (local): ./install.sh --local   (install from local repo instead of PyPI)
-# Usage (no-torch): ./install.sh --no-torch  (skip PyTorch, GGUF-only mode)
+# Usage (no-torch): ./install.sh --no-torch  (skip PyTorch)
 # Usage (test):  ./install.sh --package roland-sloth  (install a different package name)
 # Usage (py):    ./install.sh --python 3.12  (override auto-detected Python version)
 set -e
@@ -797,7 +797,7 @@ if [ "$OS" = "macos" ] && [ "$_ARCH" = "x86_64" ]; then
         echo ""
         echo "  WARNING: Apple Silicon detected, but this shell is running under Rosetta (x86_64)."
         echo "  Re-run install.sh from a native arm64 terminal for full PyTorch support."
-        echo "  Continuing in GGUF-only mode for now."
+        echo "  Continuing without a full PyTorch GPU stack for now."
         echo ""
     fi
     MAC_INTEL=true
@@ -816,8 +816,8 @@ if [ "$MAC_INTEL" = true ]; then
     echo ""
     echo "  NOTE: Intel Mac (x86_64) detected."
     echo "  PyTorch is unavailable for this platform (dropped Jan 2024)."
-    echo "  Studio will install in GGUF-only mode."
-    echo "  Chat, inference via GGUF, and data recipes will work."
+    echo "  Studio will install in a reduced configuration (no PyTorch wheels for this Mac)."
+    echo "  Data recipes and Studio UI will work; GPU training is not available on Intel Macs."
     echo "  Training requires Apple Silicon or Linux with GPU."
     echo ""
 fi
@@ -829,12 +829,11 @@ if [ "$_NO_TORCH_FLAG" = true ] || [ "$MAC_INTEL" = true ]; then
 fi
 
 # ── Check system dependencies ──
-# cmake and git are needed by unsloth studio setup to build the GGUF inference
-# engine (llama.cpp). build-essential and libcurl-dev are also needed on Linux.
+# git is used by Python tooling and the Studio install flow. On Linux, a
+# compiler toolchain (build-essential) is required for some native Python deps.
 tauri_log "STEP" "Checking system dependencies"
 MISSING=""
 
-command -v cmake >/dev/null 2>&1 || MISSING="$MISSING cmake"
 command -v git   >/dev/null 2>&1 || MISSING="$MISSING git"
 
 case "$OS" in
@@ -855,10 +854,6 @@ case "$OS" in
             MISSING="$MISSING curl"
         fi
         command -v gcc  >/dev/null 2>&1 || MISSING="$MISSING build-essential"
-        # libcurl dev headers for llama.cpp HTTPS support
-        if command -v dpkg >/dev/null 2>&1; then
-            dpkg -s libcurl4-openssl-dev >/dev/null 2>&1 || MISSING="$MISSING libcurl4-openssl-dev"
-        fi
         ;;
 esac
 
@@ -867,7 +862,7 @@ MISSING=$(echo "$MISSING" | sed 's/^ *//')
 if [ -n "$MISSING" ]; then
     echo ""
     step "deps" "missing: $MISSING" "$C_WARN"
-    substep "These are needed to build the GGUF inference engine."
+    substep "These are needed for the Studio development environment and native Python dependencies."
 
     case "$OS" in
         macos)
@@ -1315,7 +1310,7 @@ case "$TORCH_INDEX_URL" in
         if [ "$SKIP_TORCH" = false ] && [ "$OS" != "macos" ]; then
             echo ""
             echo "  NOTE: No GPU detected (nvidia-smi and ROCm not found)."
-            echo "  Installing CPU-only PyTorch. If you only need GGUF chat/inference,"
+            echo "  Installing CPU-only PyTorch. If you do not need PyTorch at all,"
             echo "  re-run with --no-torch for a faster, lighter install:"
             echo "    curl -fsSL https://unsloth.ai/install.sh | sh -s -- --no-torch"
             echo "  AMD ROCm users: see https://docs.unsloth.ai/get-started/install-and-update/amd"
@@ -1502,7 +1497,7 @@ elif [ -n "$TORCH_INDEX_URL" ]; then
     fi
     # AMD ROCm: install bitsandbytes (once, after torch, for all ROCm paths).
     # Gate on SKIP_TORCH=false so a user running with --no-torch on a ROCm
-    # host stays in GGUF-only mode rather than pulling in bitsandbytes,
+    # host stays in no-torch mode rather than pulling in bitsandbytes,
     # which is only useful once torch is present for training.
     if [ "$SKIP_TORCH" = false ]; then
         case "$TORCH_INDEX_URL" in

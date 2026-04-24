@@ -117,6 +117,7 @@ export function EditRecipePage({ recipeId }: EditRecipePageProps): ReactElement 
       initialRecipeName={loadState.record.name}
       initialPayload={loadState.record.payload}
       initialSavedAt={loadState.record.updatedAt}
+      learningRecipeId={loadState.record.learningRecipeId}
       onPersistRecipe={handlePersist}
     />
   );

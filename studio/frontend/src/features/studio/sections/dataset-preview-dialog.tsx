@@ -232,7 +232,7 @@ export function DatasetPreviewDialog({
   const sourceLabel = useMemo(() => {
     if (!datasetName) return "";
     if (datasetSource === "huggingface") {
-      let label = `Hugging Face (${datasetName}`;
+      let label = `Remote dataset (${datasetName}`;
       if (datasetSubset) label += ` / ${datasetSubset}`;
       if (datasetSplit) label += ` / ${datasetSplit}`;
       label += ")";
@@ -377,7 +377,7 @@ export function DatasetPreviewDialog({
                 <Spinner className="size-5 text-primary" />
               </div>
               <p className="text-sm text-muted-foreground font-medium">
-                {isHfDataset ? "Fetching dataset preview from Hugging Face..." : "Loading preview..."}
+                {isHfDataset ? "Fetching remote dataset preview..." : "Loading preview..."}
               </p>
               {isHfDataset && (
                 <p className="text-xs text-muted-foreground/60">

@@ -28,9 +28,9 @@ export const phaseColors: Record<TrainingPhase, string> = {
     "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
   configuring: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
   training:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
+    "bg-primary/12 text-primary dark:bg-primary/20 dark:text-primary",
   completed:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
+    "bg-primary/12 text-primary dark:bg-primary/20 dark:text-primary",
   error: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
   stopped: "bg-muted text-muted-foreground",
 };

@@ -150,7 +150,7 @@ export function StudioPage(): ReactElement {
 
         <div className="mb-6 flex flex-col gap-0.5 sm:mb-8">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Fine-tuning Studio
+            Fine-tuning Plane
           </h1>
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>

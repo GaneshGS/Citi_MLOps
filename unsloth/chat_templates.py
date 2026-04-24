@@ -30,11 +30,10 @@ __all__ = [
 from transformers import StoppingCriteria, StoppingCriteriaList
 from torch import LongTensor, FloatTensor
 from transformers.models.llama.modeling_llama import logger
-from .save import patch_saving_functions
 import os
 import shutil
 from .tokenizer_utils import *
-from .models._utils import patch_tokenizer
+from unsloth_zoo.tokenizer_utils import patch_tokenizer
 import re
 from .ollama_template_mappers import OLLAMA_TEMPLATES
 from unsloth_zoo.dataset_utils import (
@@ -2057,9 +2056,6 @@ def get_chat_template(
         if old_pad_token != new_pad_token: tokenizer.pad_token = old_pad_token
 
     # stopping_criteria = create_stopping_criteria(tokenizer, stop_word)
-
-    # Patch saving functions
-    tokenizer = patch_saving_functions(tokenizer)
 
     # Add Ollama
     tokenizer._ollama_modelfile = ollama_modelfile

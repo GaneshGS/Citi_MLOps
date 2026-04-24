@@ -13,7 +13,7 @@ export function ReadMore({ href = "#" }: { href?: string }) {
       onClick={(e) => {
         if (href === "#") e.preventDefault();
       }}
-      className="text-emerald-600 underline underline-offset-2 hover:text-emerald-700"
+      className="text-primary underline underline-offset-2 hover:text-primary/80"
     >
       Read more
     </a>

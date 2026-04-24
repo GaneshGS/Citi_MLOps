@@ -51,14 +51,18 @@ export function UpdateBanner({
 
             {/* Header */}
             <div className="flex items-center gap-2">
-              <span className="text-lg">🦥</span>
+              <img
+                src="/brand/citi-on-blue.png"
+                alt=""
+                className="size-8 shrink-0 object-contain"
+              />
               <div>
                 <p className="text-sm font-semibold text-foreground">
                   New version: v{info.version}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {isExternalServer
-                    ? "Run `unsloth studio update` from your terminal"
+                    ? "Run the Plane update command from your terminal"
                     : "A new app update is available"}
                 </p>
               </div>

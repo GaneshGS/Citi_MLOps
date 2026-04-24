@@ -13,7 +13,7 @@ export function useEffectiveProfile() {
   const dn = displayName.trim();
   return {
     sessionSub,
-    displayTitle: dn || "Unsloth",
+    displayTitle: dn || "Citi MLOps",
     avatarDataUrl,
   };
 }

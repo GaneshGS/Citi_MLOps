@@ -68,7 +68,7 @@ function CopyableCommand({
         aria-label={copied ? `${copyLabel} copied` : `Copy ${copyLabel}`}
       >
         {copied ? (
-          <HugeiconsIcon icon={Tick02Icon} className="size-4 text-emerald-600" />
+          <HugeiconsIcon icon={Tick02Icon} className="size-4 text-primary" />
         ) : (
           <HugeiconsIcon icon={Copy01Icon} className="size-4" />
         )}
@@ -110,7 +110,7 @@ export function UpdateStudioInstructions({
       >
         {showTitle ? (
           <p className="shrink-0 whitespace-nowrap text-sm font-semibold font-heading">
-            Update Unsloth Studio
+            Update Citi MLOps
           </p>
         ) : null}
         <div className="flex shrink-0 items-center gap-0.5 text-[11px]">
@@ -121,7 +121,7 @@ export function UpdateStudioInstructions({
               "px-0.5 py-0.5 font-medium transition-colors",
               windows
                 ? "text-foreground"
-                : "text-muted-foreground hover:text-emerald-600",
+                : "text-muted-foreground hover:text-primary",
             )}
             aria-pressed={windows}
           >
@@ -135,7 +135,7 @@ export function UpdateStudioInstructions({
               "px-0.5 py-0.5 font-medium transition-colors",
               !windows
                 ? "text-foreground"
-                : "text-muted-foreground hover:text-emerald-600",
+                : "text-muted-foreground hover:text-primary",
             )}
             aria-pressed={!windows}
           >
@@ -157,7 +157,7 @@ export function UpdateStudioInstructions({
       </AnimatePresence>
       <CopyableCommand command={STUDIO_UPDATE_CMD} copyLabel="update command" />
       <p className="text-xs text-muted-foreground leading-relaxed">
-        If that fails or unsloth studio update is unavailable, run:
+        If the update command above fails or is unavailable, run:
       </p>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
@@ -178,7 +178,7 @@ export function UpdateStudioInstructions({
         </motion.div>
       </AnimatePresence>
       <p className="text-xs text-muted-foreground leading-relaxed">
-        Restart Studio after updating for changes to take effect.
+        Restart the app after updating for changes to take effect.
       </p>
     </div>
   );

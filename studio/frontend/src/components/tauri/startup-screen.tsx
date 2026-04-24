@@ -29,7 +29,7 @@ const INSTALL_STEPS = [
   "Setting up package manager",
   "Creating Python environment",
   "Installing ML framework",
-  "Installing Unsloth",
+  "Installing Citi MLOps",
   "Finalizing setup",
 ] as const;
 
@@ -51,8 +51,21 @@ function TealSpinner({ size = 24 }: { size?: number }) {
 function Logo() {
   return (
     <div className="flex flex-col items-center gap-4">
-      <img src="/sticker.png" alt="Unsloth" className="h-[72px] w-[72px] object-contain" />
-      <img src="/studio.png" alt="Unsloth Studio" className="h-auto w-[250px] object-contain dark:invert" />
+      <img
+        src="/brand/citi-on-blue.png"
+        alt="Citibank"
+        className="h-[72px] w-[72px] object-contain"
+      />
+      <img
+        src="/brand/citi-primary.png"
+        alt=""
+        className="h-auto w-[250px] max-w-full object-contain dark:hidden"
+      />
+      <img
+        src="/brand/citi-on-blue.png"
+        alt=""
+        className="hidden h-auto max-h-[100px] w-[min(100%,250px)] object-contain dark:block"
+      />
     </div>
   );
 }
@@ -102,14 +115,14 @@ function NotInstalledContent({ onInstall }: { onInstall: () => void }) {
       <div className="flex flex-1 flex-col items-center justify-center">
         <Logo />
         <p className="mt-4 text-xs font-bold text-muted-foreground">
-          To install Unsloth, click Get Started.
+          To install Citi MLOps, click Get Started.
         </p>
       </div>
       <div className="mb-10">
         <ShimmerButton
           onClick={onInstall}
           shimmerColor="#a7f3d0"
-          background="oklch(0.696 0.17 162.48)"
+          background="oklch(0.45 0.16 256)"
           className="text-sm font-medium"
         >
           Get Started
@@ -169,7 +182,7 @@ function RepairingContent({
       </div>
       <div className="mb-10 flex flex-col items-center gap-2">
         <TealSpinner />
-        <p className="text-sm font-bold text-foreground">Updating existing Studio install...</p>
+        <p className="text-sm font-bold text-foreground">Updating existing Citi MLOps install...</p>
         {latest && (
           <p className="max-w-xs text-center text-xs text-muted-foreground">{latest}</p>
         )}

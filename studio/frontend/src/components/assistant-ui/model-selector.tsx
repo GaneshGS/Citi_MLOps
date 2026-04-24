@@ -78,7 +78,7 @@ function ModelSelectorTrigger({
         )}
       >
         {isLoaded && (
-          <span className="size-2 shrink-0 rounded-full bg-emerald-500" />
+          <span className="size-2 shrink-0 rounded-full bg-primary" />
         )}
         <span className="font-heading font-medium text-[16px] text-black dark:text-white">
           {currentModel?.name ?? "Select model"}
@@ -132,7 +132,7 @@ function ModelSelectorContent({
       ) : (
         <Tabs defaultValue="hub" className="w-full">
           <TabsList className="mb-2 w-full">
-            <TabsTrigger value="hub">Hub models</TabsTrigger>
+            <TabsTrigger value="hub">Base Model</TabsTrigger>
             <TabsTrigger value="lora">Fine-tuned</TabsTrigger>
           </TabsList>
 

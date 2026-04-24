@@ -2,12 +2,10 @@
 # Copyright 2026-present the Unsloth AI Inc. team. All rights reserved. See /studio/LICENSE.AGPL-3.0
 
 """
-Unified core module for Unsloth backend
+Unified core module for Unsloth backend (Citi-centric build).
 
-Imports are LAZY (via __getattr__) so that training subprocesses can
-import core.training.worker without pulling in heavy ML dependencies
-like unsloth, transformers, or torch before the version activation
-code has a chance to run.
+Lazy ``__getattr__`` exposes config and utility symbols without importing
+removed local training / inference / export stacks.
 """
 
 import sys
@@ -21,13 +19,6 @@ if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
 __all__ = [
-    # Inference
-    "InferenceBackend",
-    "get_inference_backend",
-    # Training
-    "get_training_backend",
-    "TrainingBackend",
-    "TrainingProgress",
     # Config
     "ModelConfig",
     "is_vision_model",
@@ -52,23 +43,6 @@ __all__ = [
 
 
 def __getattr__(name):
-    # Inference
-    if name in ("InferenceBackend", "get_inference_backend"):
-        from .inference import InferenceBackend, get_inference_backend
-
-        globals()["InferenceBackend"] = InferenceBackend
-        globals()["get_inference_backend"] = get_inference_backend
-        return globals()[name]
-
-    # Training
-    if name in ("TrainingBackend", "get_training_backend", "TrainingProgress"):
-        from .training import TrainingBackend, get_training_backend, TrainingProgress
-
-        globals()["TrainingBackend"] = TrainingBackend
-        globals()["get_training_backend"] = get_training_backend
-        globals()["TrainingProgress"] = TrainingProgress
-        return globals()[name]
-
     # Config (from utils.models)
     if name in (
         "is_vision_model",

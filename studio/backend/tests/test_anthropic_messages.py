@@ -27,14 +27,14 @@ from models.inference import (
     AnthropicResponseTextBlock,
     AnthropicResponseToolUseBlock,
 )
-from core.inference.anthropic_compat import (
+from utils.anthropic_compat import (
+    AnthropicPassthroughEmitter,
+    AnthropicStreamEmitter,
     anthropic_messages_to_openai,
     anthropic_tools_to_openai,
     build_anthropic_sse_event,
-    AnthropicStreamEmitter,
-    AnthropicPassthroughEmitter,
+    _normalize_anthropic_openai_images,
 )
-from routes.inference import _normalize_anthropic_openai_images
 from fastapi import HTTPException
 import base64 as _b64
 from io import BytesIO as _BytesIO

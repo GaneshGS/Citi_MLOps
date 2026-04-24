@@ -31,7 +31,7 @@ const statusBadge: Record<
   completed: {
     label: "Completed",
     className:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
+      "bg-primary/12 text-primary dark:bg-primary/20 dark:text-primary",
   },
   stopped: {
     label: "Stopped",
@@ -104,7 +104,7 @@ function Sparkline({ values, id }: { values: number[]; id: string }): ReactEleme
       <path
         d={fillPath}
         fill={`url(#${gradientId})`}
-        className="text-emerald-500"
+        className="text-primary"
       />
       <path
         d={linePath}
@@ -113,7 +113,7 @@ function Sparkline({ values, id }: { values: number[]; id: string }): ReactEleme
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="text-emerald-500"
+        className="text-primary"
       />
     </svg>
   );

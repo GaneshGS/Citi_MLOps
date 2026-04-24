@@ -118,6 +118,7 @@ export function buildRecipePayload(
   const nameToConfig = new Map<string, NodeConfig>();
   const allNameToConfig = new Map<string, NodeConfig>();
   const firstSeed = pickFirstSeedConfig(configs);
+  const gsspMode = Boolean(firstSeed?.gssp_enabled);
 
   for (const config of Object.values(configs)) {
     if (config.kind === "seed") {
@@ -171,9 +172,13 @@ export function buildRecipePayload(
           }
         }
       }
-      columns.push(buildLlmColumn(config, errors));
-      if (config.model_alias) {
-        modelAliases.add(config.model_alias);
+      const llmColumn = buildLlmColumn(config, errors);
+      if (gsspMode) {
+        llmColumn.model_alias = "gssp_default";
+      }
+      columns.push(llmColumn);
+      if (config.model_alias || gsspMode) {
+        modelAliases.add(gsspMode ? "gssp_default" : config.model_alias);
       }
       const toolAlias = config.tool_alias?.trim();
       if (toolAlias) {
@@ -239,15 +244,17 @@ export function buildRecipePayload(
   validateSubcategoryConfigs(configs, nameToConfig, errors);
   validateTimedeltaConfigs(configs, nameToConfig, errors);
   validateValidatorConfigs(configs, nameToConfig, errors);
-  validateModelAliasLinks(modelAliases, modelConfigConfigs, errors);
-  validateModelConfigProviders(
-    modelConfigConfigs,
-    modelAliases,
-    modelProviderNames,
-    localProviderNames,
-    errors,
-  );
-  validateUsedProviders(modelProviderConfigs, modelConfigConfigs, errors);
+  if (!gsspMode) {
+    validateModelAliasLinks(modelAliases, modelConfigConfigs, errors);
+    validateModelConfigProviders(
+      modelConfigConfigs,
+      modelAliases,
+      modelProviderNames,
+      localProviderNames,
+      errors,
+    );
+    validateUsedProviders(modelProviderConfigs, modelConfigConfigs, errors);
+  }
   for (const toolAlias of llmToolAliasesUsed) {
     if (!toolConfigJsonByAlias.has(toolAlias)) {
       errors.push(`Tool alias ${toolAlias}: missing tool config.`);
@@ -386,6 +393,49 @@ export function buildRecipePayload(
   );
   const recipeProcessors = buildProcessors(processors, errors);
   const seedConfig = firstSeed ? buildSeedConfig(firstSeed, errors) : undefined;
+  const effectiveModelProviders = [...modelProviders];
+  const effectiveModelConfigs = [...modelConfigs];
+  if (gsspMode) {
+    const gsspEndpoint =
+      firstSeed?.gssp_endpoint?.trim() ||
+      "https://gssp-gs-icg-tts-genaiservices-178442.apps.namicggtd013d.ecs.dyn.nsroot.net";
+    const gsspPath =
+      firstSeed?.gssp_path?.trim() ||
+      "/api/gssp-generation-service/v1/generate-pass-through";
+    effectiveModelProviders.length = 0;
+    effectiveModelConfigs.length = 0;
+    effectiveModelProviders.push({
+      name: "gssp_provider",
+      endpoint: gsspEndpoint,
+      // biome-ignore lint/style/useNamingConvention: api schema
+      provider_type: "openai",
+      // biome-ignore lint/style/useNamingConvention: api schema
+      api_key: firstSeed?.gssp_auth_token?.trim() || undefined,
+      // biome-ignore lint/style/useNamingConvention: api schema
+      extra_body: {
+        // backend can use this metadata to build pass-through payloads
+        gssp_path: gsspPath,
+        gssp_request_template: firstSeed?.gssp_request_template?.trim() || "",
+      },
+      // biome-ignore lint/style/useNamingConvention: api schema
+      extra_headers: {
+        "x-correlation-id": firstSeed?.gssp_x_correlation_id?.trim() || undefined,
+        "x-application-id": firstSeed?.gssp_x_application_id?.trim() || undefined,
+        "x-soeid": firstSeed?.gssp_x_soeid?.trim() || undefined,
+        "x-model-name": firstSeed?.gssp_x_model_name?.trim() || undefined,
+        "x-max-tokens": firstSeed?.gssp_x_max_tokens?.trim() || undefined,
+        "x-Authorization-Coin":
+          firstSeed?.gssp_x_authorization_coin?.trim() || undefined,
+      },
+    });
+    effectiveModelConfigs.push({
+      alias: "gssp_default",
+      model: "gssp-pass-through",
+      provider: "gssp_provider",
+      // biome-ignore lint/style/useNamingConvention: api schema
+      skip_health_check: true,
+    });
+  }
   const seedDropProcessor = firstSeed
     ? buildSeedDropProcessor(firstSeed, errors)
     : null;
@@ -399,11 +449,11 @@ export function buildRecipePayload(
     payload: {
       recipe: {
         // biome-ignore lint/style/useNamingConvention: api schema
-        model_providers: modelProviders,
+        model_providers: effectiveModelProviders,
         // biome-ignore lint/style/useNamingConvention: api schema
         mcp_providers: mcpProviders,
         // biome-ignore lint/style/useNamingConvention: api schema
-        model_configs: modelConfigs,
+        model_configs: effectiveModelConfigs,
         // biome-ignore lint/style/useNamingConvention: api schema
         seed_config: seedConfig,
         // biome-ignore lint/style/useNamingConvention: api schema
@@ -447,6 +497,74 @@ export function buildRecipePayload(
         ...(firstSeed &&
           firstSeed.unstructured_chunk_overlap !== undefined && {
             unstructured_chunk_overlap: firstSeed.unstructured_chunk_overlap,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_enabled !== undefined && {
+            gssp_enabled: firstSeed.gssp_enabled,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_endpoint !== undefined && {
+            gssp_endpoint: firstSeed.gssp_endpoint,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_path !== undefined && {
+            gssp_path: firstSeed.gssp_path,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_auth_token !== undefined && {
+            gssp_auth_token: firstSeed.gssp_auth_token,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_correlation_id !== undefined && {
+            gssp_x_correlation_id: firstSeed.gssp_x_correlation_id,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_application_id !== undefined && {
+            gssp_x_application_id: firstSeed.gssp_x_application_id,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_soeid !== undefined && {
+            gssp_x_soeid: firstSeed.gssp_x_soeid,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_model_name !== undefined && {
+            gssp_x_model_name: firstSeed.gssp_x_model_name,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_max_tokens !== undefined && {
+            gssp_x_max_tokens: firstSeed.gssp_x_max_tokens,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_authorization_coin !== undefined && {
+            gssp_x_authorization_coin: firstSeed.gssp_x_authorization_coin,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_correlation_id !== undefined && {
+            gssp_x_correlation_id: firstSeed.gssp_x_correlation_id,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_application_id !== undefined && {
+            gssp_x_application_id: firstSeed.gssp_x_application_id,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_soeid !== undefined && {
+            gssp_x_soeid: firstSeed.gssp_x_soeid,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_model_name !== undefined && {
+            gssp_x_model_name: firstSeed.gssp_x_model_name,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_max_tokens !== undefined && {
+            gssp_x_max_tokens: firstSeed.gssp_x_max_tokens,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_x_authorization_coin !== undefined && {
+            gssp_x_authorization_coin: firstSeed.gssp_x_authorization_coin,
+          }),
+        ...(firstSeed &&
+          firstSeed.gssp_request_template !== undefined && {
+            gssp_request_template: firstSeed.gssp_request_template,
           }),
         ...(Object.keys(uiAdvancedOpenByNode).length > 0 && {
           // biome-ignore lint/style/useNamingConvention: ui schema

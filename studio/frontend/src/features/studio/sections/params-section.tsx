@@ -883,7 +883,7 @@ export function ParamsSection(): ReactElement {
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
                         <SelectItem value="true">Standard</SelectItem>
-                        <SelectItem value="unsloth">Unsloth</SelectItem>
+                        <SelectItem value="unsloth">Citi MLOps</SelectItem>
                       </SelectContent>
                     </Select>
                   </Row>

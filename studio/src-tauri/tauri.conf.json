@@ -1,5 +1,5 @@
 {
-  "productName": "Unsloth Studio (Desktop)",
+  "productName": "Citi MLOps (Desktop)",
   "identifier": "ai.unsloth.studio",
   "build": {
     "beforeDevCommand": "npm --prefix ../frontend run dev -- --port 5173 --strictPort",
@@ -15,7 +15,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Unsloth Studio (Desktop)",
+        "title": "Citi MLOps (Desktop)",
         "width": 690,
         "height": 480,
         "visible": false,
@@ -25,7 +25,7 @@
     "trayIcon": {
       "iconPath": "icons/icon.png",
       "id": "main",
-      "tooltip": "Unsloth Studio (Desktop)"
+      "tooltip": "Citi MLOps (Desktop)"
     }
   },
   "plugins": {

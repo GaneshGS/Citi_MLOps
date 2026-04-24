@@ -45,7 +45,7 @@ export function DocumentUploadRedirectDialog({
                 className="size-5 text-foreground/90"
               />
             </div>
-            <Badge variant="outline">Recipe Studio</Badge>
+            <Badge variant="outline">Recipe Plane</Badge>
           </div>
           <div className="space-y-1">
             <DialogTitle>This file needs conversion first</DialogTitle>

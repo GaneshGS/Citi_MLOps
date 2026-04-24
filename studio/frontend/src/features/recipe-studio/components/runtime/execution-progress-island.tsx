@@ -86,7 +86,7 @@ export function ExecutionProgressIsland({
             className={cn(
               "size-3.5",
               complete
-                ? "text-emerald-700 dark:text-emerald-300"
+                ? "text-primary dark:text-primary"
                 : "text-amber-700 dark:text-amber-300",
             )}
           />

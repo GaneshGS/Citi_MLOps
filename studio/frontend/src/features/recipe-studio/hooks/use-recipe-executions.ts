@@ -74,6 +74,14 @@ type UseRecipeExecutionsResult = {
     valid: boolean;
     errors: string[];
     rawDetail: string | null;
+    details: Array<{
+      message: string;
+      code?: string | null;
+      hint?: string | null;
+      fieldPath?: string | null;
+      blockName?: string | null;
+      blockId?: string | null;
+    }>;
   } | null;
   runPreview: () => Promise<boolean>;
   runFull: () => Promise<boolean>;
@@ -109,6 +117,14 @@ export function useRecipeExecutions({
     valid: boolean;
     errors: string[];
     rawDetail: string | null;
+    details: Array<{
+      message: string;
+      code?: string | null;
+      hint?: string | null;
+      fieldPath?: string | null;
+      blockName?: string | null;
+      blockId?: string | null;
+    }>;
   } | null>(null);
   const {
     runDialogOpen,
@@ -404,6 +420,7 @@ export function useRecipeExecutions({
         valid: false,
         errors: nextErrors,
         rawDetail: null,
+        details: [],
       });
       return false;
     }
@@ -426,6 +443,14 @@ export function useRecipeExecutions({
         valid: validation.valid,
         errors,
         rawDetail: validation.raw_detail ?? null,
+        details: validation.errors.map((item) => ({
+          message: item.message,
+          code: item.code ?? null,
+          hint: item.hint ?? null,
+          fieldPath: item.field_path ?? null,
+          blockName: item.block_name ?? null,
+          blockId: item.block_id ?? null,
+        })),
       });
       return validation.valid;
     } catch (error) {
@@ -434,6 +459,7 @@ export function useRecipeExecutions({
         valid: false,
         errors: [message],
         rawDetail: null,
+        details: [],
       });
       return false;
     } finally {

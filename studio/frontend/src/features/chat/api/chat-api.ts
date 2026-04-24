@@ -44,8 +44,8 @@ async function parseJsonOrThrow<T>(response: Response): Promise<T> {
   return body as T;
 }
 
-export async function listModels(): Promise<ListModelsResponse> {
-  const response = await authFetch("/api/models/list");
+export async function listModels(signal?: AbortSignal): Promise<ListModelsResponse> {
+  const response = await authFetch("/api/models/list", signal ? { signal } : undefined);
   return parseJsonOrThrow<ListModelsResponse>(response);
 }
 
@@ -97,26 +97,6 @@ export async function unloadModel(payload: UnloadModelRequest): Promise<void> {
   await parseJsonOrThrow<unknown>(response);
 }
 
-export interface CachedGgufRepo {
-  repo_id: string;
-  size_bytes: number;
-  cache_path: string;
-}
-
-export async function getGgufDownloadProgress(
-  repoId: string,
-  variant: string,
-  expectedBytes: number,
-): Promise<{ downloaded_bytes: number; expected_bytes: number; progress: number }> {
-  const params = new URLSearchParams({
-    repo_id: repoId,
-    variant,
-    expected_bytes: String(expectedBytes),
-  });
-  const response = await authFetch(`/api/models/gguf-download-progress?${params}`);
-  return parseJsonOrThrow(response);
-}
-
 export interface DownloadProgressResponse {
   downloaded_bytes: number;
   expected_bytes: number;
@@ -129,12 +109,28 @@ export interface DownloadProgressResponse {
   cache_path: string | null;
 }
 
+/** Local HF cache progress was removed with `/api/models/download-progress`. */
+export async function getGgufDownloadProgress(
+  _repoId: string,
+  _variant: string,
+  expectedBytes: number,
+): Promise<{ downloaded_bytes: number; expected_bytes: number; progress: number }> {
+  return {
+    downloaded_bytes: 0,
+    expected_bytes: expectedBytes,
+    progress: 0,
+  };
+}
+
 export async function getDownloadProgress(
-  repoId: string,
+  _repoId: string,
 ): Promise<DownloadProgressResponse> {
-  const params = new URLSearchParams({ repo_id: repoId });
-  const response = await authFetch(`/api/models/download-progress?${params}`);
-  return parseJsonOrThrow(response);
+  return {
+    downloaded_bytes: 0,
+    expected_bytes: 0,
+    progress: 0,
+    cache_path: null,
+  };
 }
 
 export async function getDatasetDownloadProgress(
@@ -168,125 +164,6 @@ export interface LoadProgressResponse {
 export async function getLoadProgress(): Promise<LoadProgressResponse> {
   const response = await authFetch(`/api/inference/load-progress`);
   return parseJsonOrThrow(response);
-}
-
-export interface LocalModelInfo {
-  id: string;
-  display_name: string;
-  path: string;
-  source: "models_dir" | "hf_cache" | "lmstudio" | "custom";
-  model_id?: string | null;
-  updated_at?: number | null;
-}
-
-interface LocalModelListResponse {
-  models_dir: string;
-  hf_cache_dir?: string | null;
-  lmstudio_dirs: string[];
-  models: LocalModelInfo[];
-}
-
-export async function listLocalModels(): Promise<LocalModelListResponse> {
-  const response = await authFetch("/api/models/local");
-  return parseJsonOrThrow<LocalModelListResponse>(response);
-}
-
-export async function listCachedGguf(): Promise<CachedGgufRepo[]> {
-  const response = await authFetch("/api/models/cached-gguf");
-  const data = await parseJsonOrThrow<{ cached: CachedGgufRepo[] }>(response);
-  return data.cached;
-}
-
-export interface CachedModelRepo {
-  repo_id: string;
-  size_bytes: number;
-}
-
-export async function listCachedModels(): Promise<CachedModelRepo[]> {
-  const response = await authFetch("/api/models/cached-models");
-  const data = await parseJsonOrThrow<{ cached: CachedModelRepo[] }>(response);
-  return data.cached;
-}
-
-export async function deleteCachedModel(repoId: string, variant?: string): Promise<void> {
-  const payload: Record<string, string> = { repo_id: repoId };
-  if (variant) payload.variant = variant;
-  const response = await authFetch("/api/models/delete-cached", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  await parseJsonOrThrow<unknown>(response);
-}
-
-export interface ScanFolderInfo {
-  id: number;
-  path: string;
-  created_at: string;
-}
-
-export async function listScanFolders(): Promise<ScanFolderInfo[]> {
-  const response = await authFetch("/api/models/scan-folders");
-  const data = await parseJsonOrThrow<{ folders: ScanFolderInfo[] }>(response);
-  return data.folders;
-}
-
-export async function addScanFolder(path: string): Promise<ScanFolderInfo> {
-  const response = await authFetch("/api/models/scan-folders", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path }),
-  });
-  return parseJsonOrThrow<ScanFolderInfo>(response);
-}
-
-export async function removeScanFolder(id: number): Promise<void> {
-  const response = await authFetch(`/api/models/scan-folders/${id}`, {
-    method: "DELETE",
-  });
-  await parseJsonOrThrow<unknown>(response);
-}
-
-export interface BrowseEntry {
-  name: string;
-  has_models: boolean;
-  hidden: boolean;
-}
-
-export interface BrowseFoldersResponse {
-  current: string;
-  parent: string | null;
-  entries: BrowseEntry[];
-  suggestions: string[];
-  truncated?: boolean;
-  model_files_here?: number;
-}
-
-export async function listRecommendedFolders(): Promise<string[]> {
-  const response = await authFetch("/api/models/recommended-folders");
-  const data = await parseJsonOrThrow<{ folders: string[] }>(response);
-  return data.folders;
-}
-
-export async function browseFolders(
-  path?: string,
-  showHidden = false,
-  signal?: AbortSignal,
-): Promise<BrowseFoldersResponse> {
-  const params = new URLSearchParams();
-  if (path !== undefined && path !== null) params.set("path", path);
-  if (showHidden) params.set("show_hidden", "true");
-  const qs = params.toString();
-  // Forward the AbortSignal through authFetch -> fetch so that a
-  // navigation cancelled in the FolderBrowser (rapid breadcrumb / row /
-  // hidden-toggle clicks) actually cancels the in-flight HTTP request
-  // server-side, instead of merely dropping the response client-side
-  // while the backend keeps walking large directory trees.
-  const response = await authFetch(
-    `/api/models/browse-folders${qs ? `?${qs}` : ""}`,
-    signal ? { signal } : undefined,
-  );
-  return parseJsonOrThrow<BrowseFoldersResponse>(response);
 }
 
 export async function listGgufVariants(

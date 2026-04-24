@@ -111,7 +111,7 @@ export async function authFetch(
     response = await fetch(resolvedInput, { ...init, headers });
   } catch (err) {
     if (err instanceof TypeError) {
-      throw new Error("Studio isn't running -- please relaunch it.");
+      throw new Error("Plane isn't running -- please relaunch it.");
     }
     throw err;
   }

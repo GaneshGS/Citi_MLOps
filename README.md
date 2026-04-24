@@ -1,25 +1,25 @@
-<h1 align="center" style="margin:0;">
-  <a href="https://unsloth.ai/docs"><picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/unslothai/unsloth/main/images/unsloth%20logo%20white%20text.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/unslothai/unsloth/main/images/unsloth%20logo%20black%20text.png">
-    <img alt="Unsloth logo" src="https://raw.githubusercontent.com/unslothai/unsloth/main/images/unsloth%20logo%20black%20text.png" height="80" style="max-width:100%;">
-  </picture></a>
-</h1>
-<h3 align="center" style="margin: 0; margin-top: 0;">
-Unsloth Studio lets you run and train models locally.
+<p align="center" style="margin:0;">
+  <img alt="Citi" src="studio/frontend/public/brand/citi-primary.png" height="48" style="max-width:100%;" />
+</p>
+<h1 align="center" style="margin:0; color:#05628D; letter-spacing: -0.02em;">Citi Model Studio</h1>
+<h3 align="center" style="margin: 12px 0 0; font-weight: 500; color: #111827;">
+  Local model inference, fine-tuning, and data preparation — built on <a href="https://unsloth.ai">Unsloth</a>.
 </h3>
+<p align="center" style="max-width: 900px; margin: 12px auto 0; color:#4B5563;">
+  <strong>Distribution note:</strong> this repository is a Citi engineering distribution and may include internal-only configuration and integration paths. Some components remain upstream open source; follow your team’s security, compliance, and data-handling requirements when using, modifying, or redistributing this work.
+</p>
 
 <p align="center">
-  <a href="#-features">Features</a> •
-  <a href="#-install">Quickstart</a> •
-  <a href="#-free-notebooks">Notebooks</a> •
-  <a href="https://unsloth.ai/docs">Documentation</a>
+  <a href="#features">Features</a> •
+  <a href="#install">Quickstart</a> •
+  <a href="#free-notebooks">Notebooks</a> •
+  <a href="https://unsloth.ai/docs">Unsloth documentation (upstream)</a>
 </p>
 <br>
 <a href="https://unsloth.ai/docs/new/studio">
-<img alt="unsloth studio ui homepage" src="https://github.com/user-attachments/assets/53ae17a9-d975-44ef-9686-efb4ebd0454d" style="max-width: 100%; margin-bottom: 0;"></a>
+<img alt="Unsloth Studio (reference UI) homepage" src="https://github.com/user-attachments/assets/53ae17a9-d975-44ef-9686-efb4ebd0454d" style="max-width: 100%; margin-bottom: 0;"></a>
 
-## ⚡ Get started
+## Get started
 
 #### macOS, Linux, WSL:
 ```bash
@@ -29,14 +29,14 @@ curl -fsSL https://unsloth.ai/install.sh | sh
 ```powershell
 irm https://unsloth.ai/install.ps1 | iex
 ```
-#### Community:
+#### Upstream community:
 
 - [Discord](https://discord.gg/unsloth)
 - [𝕏 (Twitter)](https://x.com/UnslothAI)
 - [Reddit](https://reddit.com/r/unsloth)
 
-## ⭐ Features
-Unsloth Studio (Beta) lets you run and train text, [audio](https://unsloth.ai/docs/basics/text-to-speech-tts-fine-tuning), [embedding](https://unsloth.ai/docs/new/embedding-finetuning), [vision](https://unsloth.ai/docs/basics/vision-fine-tuning) models on Windows, Linux and macOS.
+## Features
+**Citi Model Studio (Beta)** (powered by <a href="https://unsloth.ai/docs/new/studio">Unsloth Studio</a>) lets you run and train text, [audio](https://unsloth.ai/docs/basics/text-to-speech-tts-fine-tuning), [embedding](https://unsloth.ai/docs/new/embedding-finetuning), [vision](https://unsloth.ai/docs/basics/vision-fine-tuning) models on Windows, Linux and macOS.
 
 ### Inference
 * **Search + download + run models** including GGUF, LoRA adapters, safetensors
@@ -55,8 +55,8 @@ Unsloth Studio (Beta) lets you run and train text, [audio](https://unsloth.ai/do
 * **Observability**: Monitor training live, track loss and GPU usage and customize graphs.
 * [Multi-GPU](https://unsloth.ai/docs/basics/multi-gpu-training-with-unsloth) training is supported, with major improvements coming soon.
 
-## 📥 Install
-Unsloth can be used in two ways: through **[Unsloth Studio](https://unsloth.ai/docs/new/studio/)**, the web UI, or through **Unsloth Core**, the code-based version. Each has different requirements.
+## Install
+Citi Model Studio (powered by <a href="https://unsloth.ai">Unsloth</a>) can be used in two ways: through **[Unsloth Studio](https://unsloth.ai/docs/new/studio/)**, the web UI, or through **Unsloth Core**, the code-based version. Each has different requirements.
 
 ### Unsloth Studio (web UI)
 Unsloth Studio (Beta) works on **Windows, Linux, WSL** and **macOS**.
@@ -99,7 +99,7 @@ docker run -d -e JUPYTER_PASSWORD="mypassword" \
   ```
 
 #### Developer, Nightly, Uninstall
-To see developer, nightly and uninstallation etc. instructions, see [advanced installation](#-advanced-installation).
+To see developer, nightly and uninstallation etc. instructions, see [advanced installation](#advanced-installation).
 
 ### Unsloth Core (code-based)
 #### Linux, WSL:
@@ -124,7 +124,7 @@ You can use the same Docker image as Unsloth Studio.
 For RTX 50x, B200, 6000 GPUs: `uv pip install unsloth --torch-backend=auto`. Read our guides for: [Blackwell](https://unsloth.ai/docs/blog/fine-tuning-llms-with-blackwell-rtx-50-series-and-unsloth) and [DGX Spark](https://unsloth.ai/docs/blog/fine-tuning-llms-with-nvidia-dgx-spark-and-unsloth). <br>
 To install Unsloth on **AMD** and **Intel** GPUs, follow our [AMD Guide](https://unsloth.ai/docs/get-started/install/amd) and [Intel Guide](https://unsloth.ai/docs/get-started/install/intel).
 
-## 📒 Free Notebooks
+## Free notebooks
 
 Train for free with our notebooks. You can use our new [free Unsloth Studio notebook](https://colab.research.google.com/github/unslothai/unsloth/blob/main/studio/Unsloth_Studio_Colab.ipynb) to run and train models for free in a web UI.
 Read our [guide](https://unsloth.ai/docs/get-started/fine-tuning-llms-guide). Add dataset, run, then deploy your trained model.
@@ -147,7 +147,7 @@ Read our [guide](https://unsloth.ai/docs/get-started/fine-tuning-llms-guide). Ad
 - See [all our models](https://unsloth.ai/docs/get-started/unsloth-model-catalog) and [all our notebooks](https://unsloth.ai/docs/get-started/unsloth-notebooks)
 - See detailed documentation for Unsloth [here](https://unsloth.ai/docs)
 
-## 🦥 Unsloth News
+## Unsloth project updates
 - **Qwen3.6**: Qwen3.6-35B-A3B can now be trained and run in Unsloth Studio. [Blog](https://unsloth.ai/docs/models/qwen3.6)
 - **Gemma 4**: Run and train Google’s new models directly in Unsloth. [Blog](https://unsloth.ai/docs/models/gemma-4)
 - **Introducing Unsloth Studio**: our new web UI for running and training LLMs. [Blog](https://unsloth.ai/docs/new/studio)
@@ -160,8 +160,8 @@ Read our [guide](https://unsloth.ai/docs/get-started/fine-tuning-llms-guide). Ad
 - **FP8 & Vision RL**: You can now do FP8 & VLM GRPO on consumer GPUs. [FP8 Blog](https://unsloth.ai/docs/get-started/reinforcement-learning-rl-guide/fp8-reinforcement-learning) • [Vision RL](https://unsloth.ai/docs/get-started/reinforcement-learning-rl-guide/vision-reinforcement-learning-vlm-rl)
 - **gpt-oss** by OpenAI: Read our [RL blog](https://unsloth.ai/docs/models/gpt-oss-how-to-run-and-fine-tune/gpt-oss-reinforcement-learning), [Flex Attention](https://unsloth.ai/docs/models/gpt-oss-how-to-run-and-fine-tune/long-context-gpt-oss-training) blog and [Guide](https://unsloth.ai/docs/models/gpt-oss-how-to-run-and-fine-tune).
 
-## 📥 Advanced Installation
-The below advanced instructions are for Unsloth Studio. For Unsloth Core advanced installation, [view our docs](https://unsloth.ai/docs/get-started/install/pip-install#advanced-pip-installation).
+## Advanced installation
+The below advanced instructions are for Unsloth Studio (the upstream Studio UI; this Citi distribution may layer additional policy and internal packaging on top). For Unsloth Core advanced installation, [view our docs](https://unsloth.ai/docs/get-started/install/pip-install#advanced-pip-installation).
 #### Developer installs: macOS, Linux, WSL:
 ```bash
 git clone https://github.com/unslothai/unsloth
@@ -230,7 +230,7 @@ You can delete old model files either from the bin icon in model search or by re
 * ​ **MacOS, Linux, WSL:** `~/.cache/huggingface/hub/`
 * ​ **Windows:** `%USERPROFILE%\.cache\huggingface\hub\`
 
-## 💚 Community and Links
+## Community and links
 | Type                                                                                                                                      | Links                                                                          |
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | <img width="16" src="https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/66e3d80db9971f10a9757c99_Symbol.svg" />  **Discord**                       | [Join Discord server](https://discord.com/invite/unsloth)                          |
@@ -239,6 +239,7 @@ You can delete old model files either from the bin icon in model search or by re
 | <img width="13" src="https://upload.wikimedia.org/wikipedia/commons/0/09/X_(formerly_Twitter)_logo_late_2025.svg" />  **Twitter (aka X)** | [Follow us on X](https://twitter.com/unslothai)                                |
 | 🔮 **Our Models**                                                                                                                         | [Unsloth Catalog](https://unsloth.ai/docs/get-started/unsloth-model-catalog)   |
 | ✍️ **Blog**                                                                                                                               | [Read our Blogs](https://unsloth.ai/blog)                                      |
+| **Citi internal**                                                                                                                        | Use your Citi support channels, knowledge bases, and security guidance for this distribution. |
 
 ### Citation
 
@@ -251,15 +252,13 @@ You can cite the Unsloth repo as follows:
   year = {2023}
 }
 ```
-If you trained a model with 🦥Unsloth, you can use this cool sticker!   <img src="https://raw.githubusercontent.com/unslothai/unsloth/main/images/made with unsloth.png" width="200" align="center" />
 
 ### License
-Unsloth uses a dual-licensing model of Apache 2.0 and AGPL-3.0. The core Unsloth package remains licensed under **[Apache 2.0](https://github.com/unslothai/unsloth?tab=Apache-2.0-1-ov-file)**, while certain optional components, such as the Unsloth Studio UI are licensed under the open-source license **[AGPL-3.0](https://github.com/unslothai/unsloth?tab=AGPL-3.0-2-ov-file)**.
+Unsloth uses a dual-licensing model of Apache 2.0 and AGPL-3.0. The core Unsloth package remains licensed under **[Apache 2.0](https://github.com/unslothai/unsloth?tab=Apache-2.0-1-ov-file)**, while certain optional components, such as the Unsloth Studio UI are licensed under the open-source license **[AGPL-3.0](https://github.com/unslothai/unsloth?tab=AGPL-3.0-2-ov-file)**. The Studio UI license text is also available at [`studio/LICENSE.AGPL-3.0`](studio/LICENSE.AGPL-3.0), and the core license text is at [`LICENSE`](LICENSE).
 
-This structure helps support ongoing Unsloth development while keeping the project open source and enabling the broader ecosystem to continue growing.
+This structure helps support ongoing Unsloth development while keeping the project open source and enabling the broader ecosystem to continue growing. Citi-specific changes do not change upstream license terms, but your internal use may be subject to additional Citi policy requirements.
 
 ### Thank You to
-- The [llama.cpp library](https://github.com/ggml-org/llama.cpp) that lets users run and save models with Unsloth
 - The Hugging Face team and their libraries: [transformers](https://github.com/huggingface/transformers) and [TRL](https://github.com/huggingface/trl)
 - The Pytorch and [Torch AO](https://github.com/unslothai/unsloth/pull/3391) team for their contributions
 - NVIDIA for their [NeMo DataDesigner](https://github.com/NVIDIA-NeMo/DataDesigner) library and their contributions

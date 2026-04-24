@@ -90,6 +90,19 @@ export function buildSeedConfig(
     sampling_strategy: config.sampling_strategy,
     // biome-ignore lint/style/useNamingConvention: api schema
     selection_strategy: selectionStrategy,
+    // Optional GSSP pass-through integration metadata consumed by backend.
+    gssp_enabled: Boolean(config.gssp_enabled),
+    gssp_endpoint: config.gssp_endpoint?.trim() || undefined,
+    gssp_path: config.gssp_path?.trim() || undefined,
+    gssp_auth_token: config.gssp_auth_token?.trim() || undefined,
+    gssp_x_correlation_id: config.gssp_x_correlation_id?.trim() || undefined,
+    gssp_x_application_id: config.gssp_x_application_id?.trim() || undefined,
+    gssp_x_soeid: config.gssp_x_soeid?.trim() || undefined,
+    gssp_x_model_name: config.gssp_x_model_name?.trim() || undefined,
+    gssp_x_max_tokens: config.gssp_x_max_tokens?.trim() || undefined,
+    gssp_x_authorization_coin:
+      config.gssp_x_authorization_coin?.trim() || undefined,
+    gssp_request_template: config.gssp_request_template?.trim() || undefined,
   };
 }
 

@@ -21,20 +21,9 @@ export const exportTourSteps: TourStep[] = [
     title: "Pick checkpoint",
     body: (
       <>
-        Pick which checkpoint to export. If you trained multiple checkpoints,
-        it’s worth exporting 1-2 candidates and testing in Chat.
-      </>
-    ),
-  },
-  {
-    id: "method",
-    target: "export-method",
-    title: "Export method",
-    body: (
-      <>
-        Choose the packaging. GGUF is for llama.cpp-style runtimes (pick a
-        quant). Safetensors is for HF/Transformers-style usage. If you’re unsure,
-        start with safetensors.
+        Pick which checkpoint to export. LoRA/QLoRA runs are merged with the base
+        into full safetensors. If you trained multiple checkpoints, try one or
+        two and test in Chat.
       </>
     ),
   },
@@ -44,8 +33,8 @@ export const exportTourSteps: TourStep[] = [
     title: "Export",
     body: (
       <>
-        Export to local or push to HF Hub. After export, test in Chat and compare
-        against base to confirm behavior is what you expect.
+        Export to local or push to the Hub. After export, test in Chat and
+        compare against base to confirm behavior is what you expect.
       </>
     ),
   },

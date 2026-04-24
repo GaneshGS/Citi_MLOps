@@ -36,6 +36,17 @@ function makeDefaultSeedConfig(id: string): SeedConfig {
     seed_preview_rows: [],
     unstructured_chunk_size: "1200",
     unstructured_chunk_overlap: "200",
+    gssp_enabled: false,
+    gssp_endpoint: "",
+    gssp_path: "/api/gssp-generation-service/v1/generate-pass-through",
+    gssp_auth_token: "",
+    gssp_x_correlation_id: "",
+    gssp_x_application_id: "",
+    gssp_x_soeid: "",
+    gssp_x_model_name: "",
+    gssp_x_max_tokens: "",
+    gssp_x_authorization_coin: "",
+    gssp_request_template: "",
     seed_splits: [],
     seed_globs_by_split: {},
     seed_columns: [],
@@ -147,6 +158,20 @@ function parseSeedSettings(seedConfigRaw: unknown): Partial<SeedConfig> {
     resolved_paths,
     unstructured_chunk_size,
     unstructured_chunk_overlap,
+    gssp_enabled: Boolean(seedConfigRaw.gssp_enabled),
+    gssp_endpoint: readString(seedConfigRaw.gssp_endpoint) ?? "",
+    gssp_path:
+      readString(seedConfigRaw.gssp_path) ??
+      "/api/gssp-generation-service/v1/generate-pass-through",
+    gssp_auth_token: readString(seedConfigRaw.gssp_auth_token) ?? "",
+    gssp_x_correlation_id: readString(seedConfigRaw.gssp_x_correlation_id) ?? "",
+    gssp_x_application_id: readString(seedConfigRaw.gssp_x_application_id) ?? "",
+    gssp_x_soeid: readString(seedConfigRaw.gssp_x_soeid) ?? "",
+    gssp_x_model_name: readString(seedConfigRaw.gssp_x_model_name) ?? "",
+    gssp_x_max_tokens: readString(seedConfigRaw.gssp_x_max_tokens) ?? "",
+    gssp_x_authorization_coin:
+      readString(seedConfigRaw.gssp_x_authorization_coin) ?? "",
+    gssp_request_template: readString(seedConfigRaw.gssp_request_template) ?? "",
     sampling_strategy,
     selection_type,
     selection_start,
@@ -170,6 +195,17 @@ export function parseSeedConfig(
     unstructuredFileSizes?: number[];
     unstructured_chunk_size?: string;
     unstructured_chunk_overlap?: string;
+    gssp_enabled?: boolean;
+    gssp_endpoint?: string;
+    gssp_path?: string;
+    gssp_auth_token?: string;
+    gssp_x_correlation_id?: string;
+    gssp_x_application_id?: string;
+    gssp_x_soeid?: string;
+    gssp_x_model_name?: string;
+    gssp_x_max_tokens?: string;
+    gssp_x_authorization_coin?: string;
+    gssp_request_template?: string;
   },
 ): SeedConfig | null {
   if (!seedConfigRaw) {
@@ -212,6 +248,37 @@ export function parseSeedConfig(
       : {}),
     ...(options?.unstructured_chunk_overlap !== undefined
       ? { unstructured_chunk_overlap: options.unstructured_chunk_overlap }
+      : {}),
+    ...(options?.gssp_enabled !== undefined
+      ? { gssp_enabled: options.gssp_enabled }
+      : {}),
+    ...(options?.gssp_endpoint !== undefined
+      ? { gssp_endpoint: options.gssp_endpoint }
+      : {}),
+    ...(options?.gssp_path !== undefined ? { gssp_path: options.gssp_path } : {}),
+    ...(options?.gssp_auth_token !== undefined
+      ? { gssp_auth_token: options.gssp_auth_token }
+      : {}),
+    ...(options?.gssp_x_correlation_id !== undefined
+      ? { gssp_x_correlation_id: options.gssp_x_correlation_id }
+      : {}),
+    ...(options?.gssp_x_application_id !== undefined
+      ? { gssp_x_application_id: options.gssp_x_application_id }
+      : {}),
+    ...(options?.gssp_x_soeid !== undefined
+      ? { gssp_x_soeid: options.gssp_x_soeid }
+      : {}),
+    ...(options?.gssp_x_model_name !== undefined
+      ? { gssp_x_model_name: options.gssp_x_model_name }
+      : {}),
+    ...(options?.gssp_x_max_tokens !== undefined
+      ? { gssp_x_max_tokens: options.gssp_x_max_tokens }
+      : {}),
+    ...(options?.gssp_x_authorization_coin !== undefined
+      ? { gssp_x_authorization_coin: options.gssp_x_authorization_coin }
+      : {}),
+    ...(options?.gssp_request_template !== undefined
+      ? { gssp_request_template: options.gssp_request_template }
       : {}),
   };
 }

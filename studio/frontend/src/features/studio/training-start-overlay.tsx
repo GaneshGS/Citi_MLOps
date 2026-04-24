@@ -185,7 +185,7 @@ function DownloadRow({ label, state }: DownloadRowProps): ReactElement | null {
           <span className="text-xs text-foreground/90">{label}</span>
           {statusLabel ? (
             <span
-              className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${isComplete ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30" : "bg-muted text-muted-foreground"}`}
+              className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${isComplete ? "bg-primary/12 text-primary ring-1 ring-primary/25 dark:bg-primary/15 dark:text-primary dark:ring-primary/30" : "bg-muted text-muted-foreground"}`}
             >
               {statusLabel}
             </span>
@@ -203,7 +203,7 @@ function DownloadRow({ label, state }: DownloadRowProps): ReactElement | null {
       {state.totalBytes > 0 ? (
         <Progress
           value={state.percent}
-          indicatorClassName="bg-[linear-gradient(90deg,oklch(0.66_0.142_166.6)_0%,oklch(0.705_0.132_166.6)_55%,oklch(0.75_0.122_166.6)_100%)]"
+          indicatorClassName="bg-[linear-gradient(90deg,oklch(0.42_0.14_256)_0%,oklch(0.48_0.15_256)_55%,oklch(0.55_0.12_256)_100%)]"
         />
       ) : null}
       {state.cachePath ? (
@@ -250,8 +250,8 @@ export function TrainingStartOverlay({
     <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-background/45 backdrop-blur-[1px]">
       <div className="pointer-events-auto relative flex w-[860px] max-w-[calc(100%-2rem)] flex-col items-center gap-4">
         <img
-          src="/unsloth-gem.png"
-          alt="Unsloth mascot"
+          src="/brand/citi-on-blue.png"
+          alt="Citibank"
           className="size-24 object-contain"
         />
         <div className="relative w-full">
@@ -300,9 +300,9 @@ export function TrainingStartOverlay({
           >
           <TypingAnimation
             duration={36}
-            className="bg-gradient-to-r from-emerald-300 via-lime-300 to-teal-300 bg-clip-text font-semibold text-transparent"
+            className="font-semibold text-primary"
           >
-            {"> unsloth training starts..."}
+            {"> Citi MLOps training starts..."}
           </TypingAnimation>
           <AnimatedSpan className="my-2">
             <pre className="whitespace-pre text-muted-foreground inline-block">{`==((====))==\n   \\\\   /|\nO^O/ \\_/ \\\n\\        /\n "-____-"`}</pre>

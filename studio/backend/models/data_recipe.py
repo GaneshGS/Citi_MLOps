@@ -28,6 +28,10 @@ class ValidateError(BaseModel):
     message: str
     path: str | None = None
     code: str | None = None
+    hint: str | None = None
+    field_path: str | None = None
+    block_name: str | None = None
+    block_id: str | None = None
 
 
 class ValidateResponse(BaseModel):

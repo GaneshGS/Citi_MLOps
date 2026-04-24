@@ -59,7 +59,7 @@ const initialState: TrainingConfigState = {
   selectedModel: null,
   trainingMethod: "qlora",
   hfToken: "",
-  datasetSource: "huggingface",
+  datasetSource: "upload",
   datasetFormat: "auto",
   dataset: null,
   datasetSubset: null,
@@ -629,7 +629,7 @@ export const useTrainingConfigStore = create<TrainingConfigStore>()(
     },
     {
       name: "unsloth_training_config_v1",
-      version: 9,
+      version: 10,
       migrate: (persisted, version) => {
         const s = persisted as Record<string, unknown>;
         if (version < 2 && s.datasetSubset == null && s.datasetConfig != null) {
@@ -663,6 +663,16 @@ export const useTrainingConfigStore = create<TrainingConfigStore>()(
           // weight_decay default changed from 0.01 to 0.001.
           if (s.weightDecay === 0.01) {
             s.weightDecay = DEFAULT_HYPERPARAMS.weightDecay;
+          }
+        }
+        if (version < 10) {
+          // Public Hub dataset pickers removed; use local / internal paths only.
+          if (s.datasetSource === "huggingface") {
+            s.datasetSource = "upload";
+            s.dataset = null;
+            s.datasetSubset = null;
+            s.datasetSplit = null;
+            s.datasetEvalSplit = null;
           }
         }
         return s as unknown as TrainingConfigStore;

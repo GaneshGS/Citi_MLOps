@@ -215,15 +215,15 @@ const ThreadWelcome: FC<{ hideComposer?: boolean }> = ({ hideComposer }) => {
         <div className="aui-thread-welcome-message flex w-full flex-col justify-center gap-6 px-4">
           <div className="flex flex-col items-center gap-2 text-center">
             <img
-              src="/Sloth emojis/sloth pc square.png"
-              alt="Sloth mascot"
-              className="size-20"
+              src="/brand/citi-on-blue.png"
+              alt="Citibank"
+              className="size-20 object-contain"
             />
             <h1 className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 animate-in font-heading font-semibold text-2xl tracking-[-0.02em] duration-200">
               Chat with your model
             </h1>
             <p className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 -mt-1 animate-in font-heading font-normal text-muted-foreground text-sm delay-75 duration-200">
-              Run GGUFs, safetensors, vision and audio models
+              Run Cloud based and Finetuned Citi Models
             </p>
           </div>
           <GeneratingSpinner />

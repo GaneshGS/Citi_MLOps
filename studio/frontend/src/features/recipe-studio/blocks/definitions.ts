@@ -30,7 +30,6 @@ import type {
 import {
   makeExpressionConfig,
   makeLlmConfig,
-  makeMarkdownNoteConfig,
   makeModelConfig,
   makeModelProviderConfig,
   makeToolProfileConfig,
@@ -132,12 +131,6 @@ export const BLOCK_GROUPS: BlockGroup[] = [
     title: "Formulas",
     description: "Build a field from other fields.",
     icon: FunctionIcon,
-  },
-  {
-    kind: "note",
-    title: "Notes",
-    description: "Add markdown notes to document your flow.",
-    icon: PencilEdit02Icon,
   },
 ];
 
@@ -352,15 +345,6 @@ const BLOCK_DEFINITIONS: BlockDefinition[] = [
     dialogKey: "expression",
     createConfig: (id, existing) => makeExpressionConfig(id, existing),
   },
-  {
-    kind: "note",
-    type: "markdown_note",
-    title: "Note",
-    description: "Add a note to the canvas. Notes do not affect the run.",
-    icon: PencilEdit02Icon,
-    dialogKey: "markdown_note",
-    createConfig: (id, existing) => makeMarkdownNoteConfig(id, existing),
-  },
 ];
 
 export function getBlocksForKind(kind: BlockKind): BlockDefinition[] {
@@ -419,7 +403,7 @@ export function getBlockDefinitionForConfig(
     return getBlockDefinition("llm", "tool_config");
   }
   if (config.kind === "markdown_note") {
-    return getBlockDefinition("note", "markdown_note");
+    return null;
   }
   return getBlockDefinition("expression", "expression");
 }

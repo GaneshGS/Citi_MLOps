@@ -20,9 +20,9 @@ export function SplashScreen({
         {/* Mascot */}
         <div className="flex justify-center">
           <motion.img
-            src="/Sloth emojis/Sloth loca pc.png"
-            alt="Sloth mascot"
-            className="size-30"
+            src="/brand/citi-primary.png"
+            alt="Citibank"
+            className="h-auto max-h-[7.5rem] w-full max-w-[min(100%,20rem)] object-contain"
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{
@@ -46,7 +46,7 @@ export function SplashScreen({
           }}
         >
           <h1 className="text-2xl font-semibold tracking-tight">
-            Unsloth Studio
+            Citi MLOps
           </h1>
           <p className="text-sm text-muted-foreground">Train and run LLMs locally</p>
         </motion.div>

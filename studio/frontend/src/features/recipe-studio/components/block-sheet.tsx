@@ -190,7 +190,7 @@ function BlockSheetButton({
         disabled ? "cursor-not-allowed opacity-60" : "hover:bg-muted/35"
       } ${
         isActive
-          ? "border-emerald-500"
+          ? "border-primary"
           : disabled
             ? "border-transparent"
             : "border-transparent hover:border-border/60"

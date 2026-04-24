@@ -74,6 +74,7 @@ export type RecipeNodeData = {
   layoutDirection?: LayoutDirection;
   runtimeState?: "idle" | "running" | "done";
   executionLocked?: boolean;
+  guidedFocus?: boolean;
 };
 
 export type RecipeNode = Node<RecipeNodeData, "builder">;
@@ -345,6 +346,18 @@ export type SeedConfig = {
   unstructured_chunk_size?: string;
   // ui-only (string for input ergonomics)
   unstructured_chunk_overlap?: string;
+  // ui-only: use fixed GSSP backend integration for LLM calls
+  gssp_enabled?: boolean;
+  gssp_endpoint?: string;
+  gssp_path?: string;
+  gssp_auth_token?: string;
+  gssp_x_correlation_id?: string;
+  gssp_x_application_id?: string;
+  gssp_x_soeid?: string;
+  gssp_x_model_name?: string;
+  gssp_x_max_tokens?: string;
+  gssp_x_authorization_coin?: string;
+  gssp_request_template?: string;
   seed_splits?: string[];
   // ui-only
   // biome-ignore lint/style/useNamingConvention: ui schema
