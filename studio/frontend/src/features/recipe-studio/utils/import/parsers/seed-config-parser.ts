@@ -38,7 +38,7 @@ function makeDefaultSeedConfig(id: string): SeedConfig {
     unstructured_chunk_overlap: "200",
     gssp_enabled: false,
     gssp_endpoint: "",
-    gssp_path: "/api/gssp-generation-service/v1/generate-pass-through",
+    gssp_path: "",
     gssp_auth_token: "",
     gssp_x_correlation_id: "",
     gssp_x_application_id: "",
@@ -160,10 +160,9 @@ function parseSeedSettings(seedConfigRaw: unknown): Partial<SeedConfig> {
     unstructured_chunk_overlap,
     gssp_enabled: Boolean(seedConfigRaw.gssp_enabled),
     gssp_endpoint: readString(seedConfigRaw.gssp_endpoint) ?? "",
-    gssp_path:
-      readString(seedConfigRaw.gssp_path) ??
-      "/api/gssp-generation-service/v1/generate-pass-through",
-    gssp_auth_token: readString(seedConfigRaw.gssp_auth_token) ?? "",
+    gssp_path: readString(seedConfigRaw.gssp_path) ?? "",
+    // Auth token is server-only; ignore legacy persisted values
+    gssp_auth_token: "",
     gssp_x_correlation_id: readString(seedConfigRaw.gssp_x_correlation_id) ?? "",
     gssp_x_application_id: readString(seedConfigRaw.gssp_x_application_id) ?? "",
     gssp_x_soeid: readString(seedConfigRaw.gssp_x_soeid) ?? "",

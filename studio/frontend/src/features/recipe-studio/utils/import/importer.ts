@@ -404,7 +404,6 @@ export function importRecipePayload(input: string): ImportResult {
     typeof ui?.gssp_enabled === "boolean" ? ui.gssp_enabled : undefined;
   const uiGsspEndpoint = readString(ui?.gssp_endpoint) ?? undefined;
   const uiGsspPath = readString(ui?.gssp_path) ?? undefined;
-  const uiGsspAuthToken = readString(ui?.gssp_auth_token) ?? undefined;
   const uiGsspCorrelationId = readString(ui?.gssp_x_correlation_id) ?? undefined;
   const uiGsspApplicationId = readString(ui?.gssp_x_application_id) ?? undefined;
   const uiGsspSoeid = readString(ui?.gssp_x_soeid) ?? undefined;
@@ -437,7 +436,6 @@ export function importRecipePayload(input: string): ImportResult {
       gssp_enabled: uiGsspEnabled,
       gssp_endpoint: uiGsspEndpoint,
       gssp_path: uiGsspPath,
-      gssp_auth_token: uiGsspAuthToken,
       gssp_x_correlation_id: uiGsspCorrelationId,
       gssp_x_application_id: uiGsspApplicationId,
       gssp_x_soeid: uiGsspSoeid,

@@ -75,6 +75,8 @@ const initialState: TrainingConfigState = {
   datasetSliceEnd: null,
   uploadedFile: null,
   uploadedEvalFile: null,
+  stellarTrainDatasetId: null,
+  stellarTestDatasetId: null,
   isCheckingVision: false,
   isVisionModel: false,
   isEmbeddingModel: false,
@@ -334,6 +336,8 @@ export const useTrainingConfigStore = create<TrainingConfigStore>()(
         datasetSliceStart: null,
         datasetSliceEnd: null,
         uploadedEvalFile: null,
+        stellarTrainDatasetId: null,
+        stellarTestDatasetId: null,
         isDatasetImage: null,
         isDatasetAudio: false,
         isCheckingDataset: false,
@@ -560,6 +564,16 @@ export const useTrainingConfigStore = create<TrainingConfigStore>()(
           uploadedEvalFile,
           evalSteps: uploadedEvalFile ? 0.1 : 0,
         }),
+        setStellarDatasetIds: ({ trainDatasetId, testDatasetId }) =>
+          set({
+            stellarTrainDatasetId: trainDatasetId,
+            stellarTestDatasetId: testDatasetId,
+          }),
+        clearStellarDatasetIds: () =>
+          set({
+            stellarTrainDatasetId: null,
+            stellarTestDatasetId: null,
+          }),
         setEpochs: (epochs) => set({ epochs }),
         setContextLength: (contextLength) => set({ contextLength }),
         setLearningRate: (learningRate) => {

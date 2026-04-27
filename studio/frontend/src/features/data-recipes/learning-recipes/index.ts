@@ -93,7 +93,7 @@ export type LearningRecipeDef = {
 export const LEARNING_RECIPES: LearningRecipeDef[] = [
   {
     id: "structured-outputs-jinja",
-    title: "Structured Outputs + Jinja Expressions",
+    title: "Structured Outputs",
     description:
       "Support ticket triage with structured JSON outputs and Jinja conditionals.",
     loadPayload: () => loadPayloadFromUrl(structuredOutputsJinjaUrl),

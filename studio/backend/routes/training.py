@@ -9,6 +9,7 @@ indicate that local GPU training is delegated to external orchestration.
 """
 
 import json
+from datetime import datetime, timezone
 from typing import AsyncIterator
 
 from fastapi import APIRouter, Depends, Request
@@ -30,11 +31,38 @@ from utils.local_ml import CITI_EXTERNAL_API_PLACEHOLDER
 class TrainingStopRequest(BaseModel):
     save: bool = True
 
+
+class StellarDatasetRegistryRequest(BaseModel):
+    train_dataset_path: str
+    test_dataset_path: str | None = None
+
+
+class StellarDatasetRegistryResponse(BaseModel):
+    status: str
+    train_dataset_id: str
+    test_dataset_id: str | None
+    message: str
+
+
+class StellarFinetuneRequest(BaseModel):
+    model_name: str
+    model_catalog: str
+    method: str
+    train_dataset_id: str
+    test_dataset_id: str | None = None
+    hyperparameters: dict
+
 logger = get_logger(__name__)
 
 router = APIRouter()
 
 _DISABLED = CITI_EXTERNAL_API_PLACEHOLDER
+
+
+def _dummy_stellar_id(prefix: str, source: str) -> str:
+    seed = source.replace("/", "_").replace("\\", "_").replace(".", "_")
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    return f"stellar_{prefix}_{seed}_{ts}"
 
 
 def _sse(data: str, event: str, event_id: int) -> str:
@@ -83,6 +111,45 @@ async def start_training(
         status = "error",
         message = _DISABLED,
         error = "local_ml_disabled",
+    )
+
+
+@router.post("/stellar/datasets/register", response_model=StellarDatasetRegistryResponse)
+async def register_stellar_datasets(
+    request: StellarDatasetRegistryRequest,
+    current_subject: str = Depends(get_current_subject),
+):
+    train_id = _dummy_stellar_id("train", request.train_dataset_path)
+    test_id = (
+        _dummy_stellar_id("test", request.test_dataset_path)
+        if request.test_dataset_path
+        else None
+    )
+    return StellarDatasetRegistryResponse(
+        status="ok",
+        train_dataset_id=train_id,
+        test_dataset_id=test_id,
+        message="Dummy Stellar registry: dataset IDs generated locally.",
+    )
+
+
+@router.post("/stellar/finetune/start")
+async def start_stellar_finetune(
+    request: StellarFinetuneRequest,
+    current_subject: str = Depends(get_current_subject),
+):
+    logger.info(
+        "stellar finetune dummy start model=%s catalog=%s method=%s train_id=%s",
+        request.model_name,
+        request.model_catalog,
+        request.method,
+        request.train_dataset_id,
+    )
+    return TrainingJobResponse(
+        job_id=f"stellar_job_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+        status="queued",
+        message="Dummy Stellar finetuning request accepted.",
+        error=None,
     )
 
 

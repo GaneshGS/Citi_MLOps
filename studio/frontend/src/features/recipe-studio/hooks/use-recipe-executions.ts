@@ -65,7 +65,7 @@ type UseRecipeExecutionsResult = {
   fullLoading: boolean;
   executions: RecipeExecutionRecord[];
   selectedExecutionId: string | null;
-  setSelectedExecutionId: (id: string) => void;
+  setSelectedExecutionId: (id: string | null) => void;
   openRunDialog: (kind: RecipeExecutionKind) => void;
   runFromDialog: () => Promise<boolean>;
   validateFromDialog: () => Promise<boolean>;
@@ -552,7 +552,7 @@ export function useRecipeExecutions({
   );
 
   const setSelectedExecutionId = useCallback(
-    (id: string): void => {
+    (id: string | null): void => {
       selectExecution(id);
     },
     [selectExecution],

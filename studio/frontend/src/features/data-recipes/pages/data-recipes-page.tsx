@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ShineBorder } from "@/components/ui/shine-border";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toastError } from "@/shared/toast";
 import {
   Album02Icon,
@@ -61,7 +62,7 @@ const TEMPLATE_CARDS: TemplateCard[] = [
       "Unstructured PDF chunks transformed into grounded question-answer training pairs.",
     icon: DocumentAttachmentIcon,
     difficulty: "Easy",
-    learningBadges: ["Unstructured", "LLM Text"],
+    learningBadges: ["Unstructured", "GSSP"],
     surfaceClassName:
       "from-sky-500/12 via-primary/6 to-transparent dark:from-sky-400/24 dark:via-primary/10 dark:to-slate-900/18",
     shineColor: [
@@ -88,7 +89,7 @@ const TEMPLATE_CARDS: TemplateCard[] = [
     learningRecipeId: "ocr-document-extraction",
   },
   {
-    title: "Structured Outputs + Jinja Expressions",
+    title: "Structured Outputs",
     description:
       "Support ticket triage dataset with structured JSON outputs and Jinja if/else refs.",
     icon: FunctionIcon,
@@ -236,6 +237,8 @@ function LearningRecipeCards({
   );
 }
 
+type DataRecipesPlaneTab = "configure" | "current-run" | "history";
+
 export function DataRecipesPage(): ReactElement {
   const navigate = useNavigate();
   const { recipes, ready } = useRecipes();
@@ -244,6 +247,7 @@ export function DataRecipesPage(): ReactElement {
   const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(
     null,
   );
+  const [planeTab, setPlaneTab] = useState<DataRecipesPlaneTab>("configure");
 
   useEffect(() => {
     if (sessionStorage.getItem(OPEN_LEARNING_RECIPES_ON_ARRIVAL_KEY) !== "1") {
@@ -322,114 +326,163 @@ export function DataRecipesPage(): ReactElement {
 
   const isBusy = creatingRecipe || Boolean(loadingTemplateId);
 
+  const planeSubtitle = (() => {
+    if (planeTab === "configure") {
+      return "Choose a training template or open a saved recipe. Each recipe runs the graph (GSSP / GS when enabled on the seed).";
+    }
+    if (planeTab === "current-run") {
+      return "Active runs are shown in the open recipe. Open a recipe from Configure to start or follow progress.";
+    }
+    return "Completed runs and exports are listed in each recipe’s History tab.";
+  })();
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto w-full max-w-7xl px-6 py-8">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Data Recipes
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Create and manage local recipe workflows.
-            </p>
+      <main className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-8">
+        <div className="mb-6 flex flex-col gap-0.5 sm:mb-8">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Training Data Recipes
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {planeSubtitle}
+              </p>
+            </div>
+            {planeTab === "configure" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild={true}>
+                  <Button type="button" disabled={isBusy}>
+                    <HugeiconsIcon icon={PlusSignIcon} className="size-4" />
+                    New Recipe
+                    <HugeiconsIcon icon={ArrowDown01Icon} className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      openNewRecipe().catch(() => undefined);
+                    }}
+                  >
+                    <HugeiconsIcon icon={PlusSignIcon} className="size-4" />
+                    Start Empty
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setLearningDialogOpen(true);
+                    }}
+                  >
+                    <HugeiconsIcon icon={CookBookIcon} className="size-4" />
+                    Start from Learning Recipe
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild={true}>
-              <Button type="button" disabled={isBusy}>
-                <HugeiconsIcon icon={PlusSignIcon} className="size-4" />
-                New Recipe
-                <HugeiconsIcon icon={ArrowDown01Icon} className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onSelect={() => {
-                  openNewRecipe().catch(() => undefined);
-                }}
-              >
-                <HugeiconsIcon icon={PlusSignIcon} className="size-4" />
-                Start Empty
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => {
-                  setLearningDialogOpen(true);
-                }}
-              >
-                <HugeiconsIcon icon={CookBookIcon} className="size-4" />
-                Start from Learning Recipe
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {!ready ? (
-          <div className="mt-8 rounded-2xl border border-border/70 bg-card px-6 py-10 text-center">
-            <p className="text-sm font-medium text-foreground">
-              Loading recipes
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Fetching your saved recipes and learning templates.
-            </p>
-          </div>
-        ) : recipes.length === 0 ? (
-          <div className="mt-8 max-w-6xl">
-            <LearningRecipeCards
-              onSelect={(template) => {
-                openLearningRecipe(template).catch(() => undefined);
-              }}
-              loadingTemplateId={loadingTemplateId}
-            />
-          </div>
-        ) : (
-          <div className="mt-8 space-y-2">
-            {recipes.map((recipe) => (
-              <div
-                key={recipe.id}
-                className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3"
-              >
-                <button
-                  type="button"
-                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                  onClick={() => openRecipe(recipe)}
-                >
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/20">
-                    <HugeiconsIcon
-                      icon={CookBookIcon}
-                      className="size-4 text-muted-foreground"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-medium">
-                        {recipe.name}
-                      </p>
-                      {recipe.learningRecipeId ? (
-                        <Badge variant="outline">Learning Recipe</Badge>
-                      ) : null}
+          <Tabs
+            value={planeTab}
+            onValueChange={(v) => {
+              setPlaneTab(v as DataRecipesPlaneTab);
+            }}
+            className="mt-2 w-full"
+          >
+            <TabsList variant="line" className="w-full sm:w-auto">
+              <TabsTrigger value="configure">Configure</TabsTrigger>
+              <TabsTrigger value="current-run">Current Run</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+            </TabsList>
+            <TabsContent value="configure" className="mt-6 outline-none">
+              {!ready ? (
+                <div className="rounded-2xl border border-border/70 bg-card px-6 py-10 text-center">
+                  <p className="text-sm font-medium text-foreground">
+                    Loading recipes
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Fetching your saved recipes and learning templates.
+                  </p>
+                </div>
+              ) : recipes.length === 0 ? (
+                <div className="max-w-6xl">
+                  <LearningRecipeCards
+                    onSelect={(template) => {
+                      openLearningRecipe(template).catch(() => undefined);
+                    }}
+                    loadingTemplateId={loadingTemplateId}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {recipes.map((recipe) => (
+                    <div
+                      key={recipe.id}
+                      className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3"
+                    >
+                      <button
+                        type="button"
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        onClick={() => openRecipe(recipe)}
+                      >
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/20">
+                          <HugeiconsIcon
+                            icon={CookBookIcon}
+                            className="size-4 text-muted-foreground"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-medium">
+                              {recipe.name}
+                            </p>
+                            {recipe.learningRecipeId ? (
+                              <Badge variant="outline">Learning Recipe</Badge>
+                            ) : null}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Last updated {formatRelativeTime(recipe.updatedAt)} |
+                            Created {formatRelativeTime(recipe.createdAt)}
+                          </p>
+                        </div>
+                      </button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        onClick={() => {
+                          handleDeleteRecipe(recipe.id).catch(() => undefined);
+                        }}
+                        aria-label={`Delete ${recipe.name}`}
+                      >
+                        <HugeiconsIcon icon={Delete02Icon} className="size-4" />
+                      </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Last updated {formatRelativeTime(recipe.updatedAt)} |
-                      Created {formatRelativeTime(recipe.createdAt)}
-                    </p>
-                  </div>
-                </button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  onClick={() => {
-                    handleDeleteRecipe(recipe.id).catch(() => undefined);
-                  }}
-                  aria-label={`Delete ${recipe.name}`}
-                >
-                  <HugeiconsIcon icon={Delete02Icon} className="size-4" />
-                </Button>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="current-run" className="mt-6 outline-none">
+              <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-6 py-10 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Open a recipe from the{" "}
+                  <span className="font-medium text-foreground">Configure</span>{" "}
+                  tab, then use{" "}
+                  <span className="font-medium text-foreground">Current Run</span>{" "}
+                  in the recipe to follow in-flight execution and outputs.
+                </p>
               </div>
-            ))}
-          </div>
-        )}
+            </TabsContent>
+            <TabsContent value="history" className="mt-6 outline-none">
+              <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-6 py-10 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Per-recipe run history and exports are on the{" "}
+                  <span className="font-medium text-foreground">History</span>{" "}
+                  tab when you have a recipe open. Pick a learning template or
+                  saved recipe under Configure to start.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </main>
 
       <Dialog open={learningDialogOpen} onOpenChange={setLearningDialogOpen}>

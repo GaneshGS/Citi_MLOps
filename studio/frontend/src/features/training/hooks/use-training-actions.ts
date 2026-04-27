@@ -2,22 +2,13 @@
 // Copyright 2026-present the Unsloth AI Inc. team. All rights reserved. See /studio/LICENSE.AGPL-3.0
 
 import { useCallback } from "react";
-import { checkDatasetFormat } from "../api/datasets-api";
-import { buildTrainingStartPayload } from "../api/mappers";
-import { startTraining, stopTraining, resetTraining } from "../api/train-api";
+import { resetTraining, startStellarFinetuning, stopTraining } from "../api/train-api";
 import { syncTrainingRuntimeFromBackend } from "../lib/sync-runtime";
 import { validateTrainingConfig } from "../lib/validation";
-import { useDatasetPreviewDialogStore } from "../stores/dataset-preview-dialog-store";
 import { useTrainingConfigStore } from "../stores/training-config-store";
 import { useTrainingRuntimeStore } from "../stores/training-runtime-store";
 import type { TrainingConfigState } from "../types/config";
 import { toast } from "sonner";
-
-/** Chatml → format-specific role remap (only for formats that differ from chatml). */
-const ROLE_REMAP: Record<string, Record<string, string>> = {
-  alpaca: { user: "instruction", system: "input", assistant: "output" },
-  sharegpt: { user: "human", assistant: "gpt", system: "system" },
-};
 
 function normalizeTrainingStartError(message: string): string {
   const normalized = message.toLowerCase();
@@ -39,7 +30,6 @@ export function useTrainingActions() {
   const startTrainingRun = useCallback(async (): Promise<boolean> => {
     const config = useTrainingConfigStore.getState();
     const runtimeStore = useTrainingRuntimeStore.getState();
-    const dialogStore = useDatasetPreviewDialogStore.getState();
 
     runtimeStore.setStartError(null);
     const validation = validateTrainingConfig(config);
@@ -47,74 +37,29 @@ export function useTrainingActions() {
       runtimeStore.setStartError(validation.message);
       return false;
     }
+    if (!config.stellarTrainDatasetId) {
+      runtimeStore.setStartError("Register train/test data first to get Stellar dataset IDs.");
+      return false;
+    }
 
     runtimeStore.setStarting(true);
 
     try {
-      const datasetName = getDatasetName(config);
-      let isVlm = config.isVisionModel && config.isDatasetImage === true;
-
-      if (datasetName) {
-        const check = await checkDatasetFormat({
-          datasetName,
-          hfToken: config.hfToken.trim() || null,
-          subset: config.datasetSubset,
-          split: config.datasetSplit,
-          isVlm,
-        });
-
-        // Backend auto-detects image/audio from dataset content.
-        // Sync these flags into the store so buildTrainingStartPayload picks them up.
-        const isAudio = !!check.is_audio;
-        const isImage = !!check.is_image;
-
-        if (isImage && config.isVisionModel) {
-          isVlm = true;
-        }
-        if (isImage !== config.isDatasetImage || isAudio !== config.isDatasetAudio) {
-          useTrainingConfigStore.setState({
-            isDatasetImage: isImage,
-            isDatasetAudio: isAudio,
-          });
-        }
-
-        const needsReview = check.requires_manual_mapping || check.detected_format === "custom_heuristic";
-        if (needsReview && !hasManualMapping(config, isVlm, isAudio)) {
-          // Pre-fill from suggested_mapping or VLM detected columns
-          const hint: Record<string, string> = {};
-          if (check.suggested_mapping) {
-            const table = ROLE_REMAP[config.datasetFormat];
-            for (const [col, role] of Object.entries(check.suggested_mapping)) {
-              hint[col] = table ? (table[role] ?? role) : role;
-            }
-          } else if (isAudio) {
-            if (check.detected_audio_column) hint[check.detected_audio_column] = "audio";
-            if (check.detected_text_column) hint[check.detected_text_column] = "text";
-            if (check.detected_speaker_column) hint[check.detected_speaker_column] = "speaker_id";
-          } else if (isVlm) {
-            if (check.detected_image_column) hint[check.detected_image_column] = "image";
-            if (check.detected_text_column) hint[check.detected_text_column] = "text";
-          }
-
-          if (Object.keys(hint).length > 0) {
-            useTrainingConfigStore.getState().setDatasetManualMapping(hint);
-          }
-
-          runtimeStore.setStarting(false);
-          dialogStore.openMapping(check);
-          return false;
-        }
-      }
-
-      // Abort if cancel was requested during dataset check
-      if (useTrainingRuntimeStore.getState().stopRequested) {
+      const latestConfig = useTrainingConfigStore.getState();
+      const trainDatasetId = latestConfig.stellarTrainDatasetId;
+      if (!trainDatasetId) {
+        runtimeStore.setStartError("Train dataset ID missing. Register datasets again.");
         runtimeStore.setStarting(false);
         return false;
       }
-
-      // Re-read config after potential store updates from dataset check
-      const payload = buildTrainingStartPayload(useTrainingConfigStore.getState());
-      const response = await startTraining(payload);
+      const response = await startStellarFinetuning({
+        model_name: latestConfig.selectedModel!,
+        model_catalog: latestConfig.selectedModel!,
+        method: latestConfig.trainingMethod,
+        train_dataset_id: trainDatasetId,
+        test_dataset_id: latestConfig.stellarTestDatasetId,
+        hyperparameters: buildStellarHyperparameters(latestConfig),
+      });
 
       if (response.status === "error") {
         const rawMessage = response.error || response.message;
@@ -178,19 +123,27 @@ export function useTrainingActions() {
   };
 }
 
-function getDatasetName(config: TrainingConfigState): string | null {
-  return config.datasetSource === "huggingface"
-    ? config.dataset
-    : config.uploadedFile;
-}
-
-function hasManualMapping(config: TrainingConfigState, isVlm = false, isAudio = false): boolean {
-  const mapping = config.datasetManualMapping;
-  const roles = new Set(Object.values(mapping));
-  if (isAudio) return roles.has("audio") && roles.has("text");
-  if (isVlm) return roles.has("image") && roles.has("text");
-  const fmt = config.datasetFormat;
-  if (fmt === "alpaca") return roles.has("instruction") && roles.has("output");
-  if (fmt === "sharegpt") return roles.has("human") && roles.has("gpt");
-  return roles.has("user") && roles.has("assistant");
+function buildStellarHyperparameters(config: TrainingConfigState): Record<string, unknown> {
+  return {
+    training_method: config.trainingMethod,
+    epochs: config.epochs,
+    max_steps: config.maxSteps,
+    context_length: config.contextLength,
+    learning_rate: config.learningRate,
+    batch_size: config.batchSize,
+    gradient_accumulation: config.gradientAccumulation,
+    warmup_steps: config.warmupSteps,
+    save_steps: config.saveSteps,
+    eval_steps: config.evalSteps,
+    optimizer: config.optimizerType,
+    lr_scheduler_type: config.lrSchedulerType,
+    weight_decay: config.weightDecay,
+    random_seed: config.randomSeed,
+    lora_rank: config.loraRank,
+    lora_alpha: config.loraAlpha,
+    lora_dropout: config.loraDropout,
+    target_modules: config.targetModules,
+    train_on_completions: config.trainOnCompletions,
+    gradient_checkpointing: config.gradientCheckpointing,
+  };
 }

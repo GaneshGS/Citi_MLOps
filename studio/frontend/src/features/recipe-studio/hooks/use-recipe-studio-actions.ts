@@ -64,7 +64,7 @@ type UseRecipeStudioActionsResult = {
   currentSignature: string;
   executions: RecipeExecutionRecord[];
   selectedExecutionId: string | null;
-  setSelectedExecutionId: (id: string) => void;
+  setSelectedExecutionId: (id: string | null) => void;
   persistRecipe: () => Promise<void>;
   openRunDialog: (kind: RecipeExecutionKind) => void;
   runFromDialog: () => Promise<boolean>;

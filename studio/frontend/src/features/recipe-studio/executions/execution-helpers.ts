@@ -88,6 +88,24 @@ export function isExecutionInProgress(status: RecipeExecutionStatus): boolean {
   );
 }
 
+/** Finished or failed runs (not in {@link isExecutionInProgress}). */
+export function isExecutionPast(status: RecipeExecutionStatus): boolean {
+  return !isExecutionInProgress(status);
+}
+
+export function filterExecutionsByScope(
+  records: RecipeExecutionRecord[],
+  scope: "all" | "active" | "past",
+): RecipeExecutionRecord[] {
+  if (scope === "all") {
+    return sortExecutions(records);
+  }
+  if (scope === "active") {
+    return sortExecutions(records.filter((e) => isExecutionInProgress(e.status)));
+  }
+  return sortExecutions(records.filter((e) => isExecutionPast(e.status)));
+}
+
 export function executionLabel(kind: "preview" | "full"): string {
   return kind === "preview" ? "Preview" : "Full run";
 }

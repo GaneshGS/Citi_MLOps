@@ -28,9 +28,11 @@ import {
 import { useShallow } from "zustand/react/shallow";
 import "@xyflow/react/dist/style.css";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BlockSheet } from "./components/block-sheet";
+import { PdfGroundedQaLinearConfigure } from "./components/pdf-grounded-qa-linear-configure";
 import { LayoutControls } from "./components/controls/layout-controls";
-import { RunValidateFloatingControls } from "./components/controls/run-validate-floating-controls";
+import { RunFloatingControls } from "./components/controls/run-floating-controls";
 import { ViewportControls } from "./components/controls/viewport-controls";
 import { ExecutionsView } from "./components/executions/executions-view";
 import { InternalsSync } from "./components/graph/internals-sync";
@@ -57,7 +59,7 @@ import { useRecipeEditorGraph } from "./hooks/use-recipe-editor-graph";
 import { useRecipeRuntimeVisuals } from "./hooks/use-recipe-runtime-visuals";
 import { useRecipeStudioActions } from "./hooks/use-recipe-studio-actions";
 import { useRecipeStudioStore } from "./stores/recipe-studio";
-import type { RecipeNodeData } from "./types";
+import type { LlmConfig, RecipeNodeData, SeedConfig } from "./types";
 import { getGraphWarnings } from "./utils/graph-warnings";
 import {
   FIT_VIEW_DURATION_MS,
@@ -90,6 +92,8 @@ const MAX_FIT_VIEW_RETRIES = 20;
  * measurements.
  */
 const FIT_VIEW_STABLE_FRAMES = 3;
+
+type RecipeFinetuneTab = "configure" | "current-run" | "history";
 
 export type PersistRecipeInput = {
   id: string | null;
@@ -204,7 +208,7 @@ export function RecipeStudioPage({
     null,
   );
   const flowContainerRef = useRef<HTMLDivElement | null>(null);
-  const [activeView, setActiveView] = useState<RecipeStudioView>("editor");
+  const [finetuneTab, setFinetuneTab] = useState<RecipeFinetuneTab>("configure");
   const [processorsOpen, setProcessorsOpen] = useState(false);
   const [interactive, setInteractive] = useState(true);
   const [runtimeIslandMinimized, setRuntimeIslandMinimized] = useState(false);
@@ -324,8 +328,6 @@ export function RecipeStudioPage({
     persistRecipe,
     openRunDialog,
     runFromDialog,
-    validateFromDialog,
-    validateLoading,
     validateResult,
     cancelExecution,
     loadExecutionDatasetPage,
@@ -342,6 +344,22 @@ export function RecipeStudioPage({
     loadRecipe,
     getCurrentPayloadFromStore,
   });
+
+  const hasActiveRun = useMemo(
+    () => executions.some((e) => isExecutionInProgress(e.status)),
+    [executions],
+  );
+
+  const activeView: RecipeStudioView = useMemo(() => {
+    if (finetuneTab === "configure") {
+      return "editor";
+    }
+    if (finetuneTab === "current-run" && !hasActiveRun) {
+      return "editor";
+    }
+    return "executions";
+  }, [finetuneTab, hasActiveRun]);
+
   const {
     activeExecution,
     runtimeVisualState,
@@ -375,20 +393,47 @@ export function RecipeStudioPage({
     );
     return missingWarning?.nodeId ?? null;
   }, [graphWarnings, guidedFlowEnabled]);
+  const pdfGroundedQaLinearTargets = useMemo(() => {
+    if (!guidedFlowEnabled) {
+      return null;
+    }
+    let seed: { id: string; config: SeedConfig } | null = null;
+    let llm: { id: string; config: LlmConfig } | null = null;
+    for (const [id, c] of Object.entries(configs)) {
+      if (c.kind === "seed" && !seed) {
+        seed = { id, config: c };
+      }
+      if (c.kind === "llm" && c.llm_type === "structured" && !llm) {
+        llm = { id, config: c };
+      }
+    }
+    if (!seed || !llm) {
+      return null;
+    }
+    return { seed, llm };
+  }, [configs, guidedFlowEnabled]);
+
   const guidedDisplayGraph = useMemo(
     () => ({
       nodes: displayGraph.nodes.map((node) => ({
         ...node,
         data: {
           ...node.data,
-          ...(guidedFlowEnabled && {
+          ...(guidedFlowEnabled &&
+            pdfGroundedQaLinearTargets == null && {
             guidedFocus: node.id === guidedFocusNodeId,
           }),
         },
       })),
       edges: displayGraph.edges,
     }),
-    [displayGraph.edges, displayGraph.nodes, guidedFlowEnabled, guidedFocusNodeId],
+    [
+      displayGraph.edges,
+      displayGraph.nodes,
+      guidedFlowEnabled,
+      guidedFocusNodeId,
+      pdfGroundedQaLinearTargets,
+    ],
   );
 
   const toggleInteractive = useCallback(() => {
@@ -423,6 +468,24 @@ export function RecipeStudioPage({
   }, [executionLocked, setExecutionLocked]);
 
   useEffect(() => {
+    if (finetuneTab === "current-run" && !hasActiveRun) {
+      setFinetuneTab(executions.length > 0 ? "history" : "configure");
+    }
+    if (finetuneTab === "history" && executions.length === 0) {
+      setFinetuneTab("configure");
+    }
+  }, [finetuneTab, hasActiveRun, executions.length]);
+
+  useEffect(() => {
+    if (hasActiveRun && finetuneTab === "history") {
+      return;
+    }
+    if (hasActiveRun && finetuneTab === "configure") {
+      setFinetuneTab("current-run");
+    }
+  }, [hasActiveRun, finetuneTab]);
+
+  useEffect(() => {
     const activeExecutionId = activeExecution?.id ?? null;
     if (
       activeExecutionId &&
@@ -455,9 +518,7 @@ export function RecipeStudioPage({
     setRecentCompletedExecution(latestCompleted);
     const hideTimer = window.setTimeout(() => {
       setRecentCompletedExecution(null);
-      setActiveView((currentView) =>
-        currentView === "editor" ? "executions" : currentView,
-      );
+      setFinetuneTab("history");
     }, COMPLETE_ISLAND_VISIBLE_MS - elapsedMs);
     return () => {
       window.clearTimeout(hideTimer);
@@ -621,7 +682,39 @@ export function RecipeStudioPage({
   }, [activeView, fitViewTick, reactFlowInstance, scheduleFitView]);
 
   let editorContent: ReactElement;
-  if (initialRecipeReady) {
+  if (initialRecipeReady && pdfGroundedQaLinearTargets) {
+    editorContent = (
+      <div className="relative h-full w-full min-h-0 rounded-t-none bg-background">
+        <PdfGroundedQaLinearConfigure
+          seedConfig={pdfGroundedQaLinearTargets.seed.config}
+          readOnly={executionLocked}
+          onUpdate={updateConfig}
+          onImport={() => setImportOpen(true)}
+          onCopy={copyRecipe}
+          copied={copied}
+        />
+        {islandExecution &&
+          (isExecutionInProgress(islandExecution.status) ||
+            islandExecution.status === "completed") && (
+            <div className="pointer-events-auto absolute left-0 right-0 top-0 z-20 flex justify-center">
+              <ExecutionProgressIsland
+                execution={islandExecution}
+                currentColumnIcon={currentColumnIcon}
+                minimized={runtimeIslandMinimized}
+                onMinimizedChange={setRuntimeIslandMinimized}
+                onViewExecutions={() => {
+                  setFinetuneTab("current-run");
+                }}
+              />
+            </div>
+          )}
+        <RunFloatingControls
+          runBusy={runBusy}
+          onOpenRun={() => openRunDialog("full")}
+        />
+      </div>
+    );
+  } else if (initialRecipeReady) {
     editorContent = (
       <ReactFlow<Node<RecipeNodeData | RecipeGraphAuxNodeData>, Edge>
         onInit={setReactFlowInstance}
@@ -747,22 +840,17 @@ export function RecipeStudioPage({
                 currentColumnIcon={currentColumnIcon}
                 minimized={runtimeIslandMinimized}
                 onMinimizedChange={setRuntimeIslandMinimized}
-                onViewExecutions={() => setActiveView("executions")}
+                onViewExecutions={() => {
+                  setFinetuneTab("current-run");
+                }}
               />
             </Panel>
           )}
-        <RunValidateFloatingControls
+        <RunFloatingControls
           runBusy={runBusy}
-          runDialogKind={runDialogKind}
-          validateLoading={validateLoading}
-          executionLocked={executionLocked}
-          onOpenRunDialog={openRunDialog}
-          onValidate={() => {
-            openRunDialog(runDialogKind);
-            void validateFromDialog();
-          }}
+          onOpenRun={() => openRunDialog("full")}
         />
-        {guidedFlowEnabled && (
+        {guidedFlowEnabled && pdfGroundedQaLinearTargets == null && (
           <RequiredActionsPanel
             configs={configs}
             nodes={displayGraph.nodes}
@@ -788,9 +876,52 @@ export function RecipeStudioPage({
     );
   }
 
+  const finetunePlaneSubtitle = useMemo(() => {
+    if (finetuneTab === "configure") {
+      if (learningRecipeId === "pdf-grounded-qa") {
+        return "Configure the document source, then run. GSSP connection details and the LLM prompt and schema are set on the server.";
+      }
+      return "Build the graph and block settings, then run. GSSP and GS are used when enabled on the seed block.";
+    }
+    if (finetuneTab === "current-run") {
+      return "Active run progress, logs, and outputs.";
+    }
+    return "Review past runs and download outputs for this recipe.";
+  }, [finetuneTab, learningRecipeId]);
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="w-full px-6 py-8">
+      <main className="relative z-10 mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+        <div className="mb-6 flex flex-col gap-0.5 sm:mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Training Data Recipe
+          </h1>
+          <p className="text-sm text-muted-foreground">{finetunePlaneSubtitle}</p>
+          <div className="mt-2">
+            <Tabs
+              value={finetuneTab}
+              onValueChange={(v) => {
+                setFinetuneTab(v as RecipeFinetuneTab);
+              }}
+              className="w-full"
+            >
+              <TabsList variant="line" className="w-full sm:w-auto">
+                <TabsTrigger value="configure" disabled={hasActiveRun}>
+                  Configure
+                </TabsTrigger>
+                <TabsTrigger value="current-run" disabled={!hasActiveRun}>
+                  Current Run
+                </TabsTrigger>
+                <TabsTrigger
+                  value="history"
+                  disabled={executions.length === 0}
+                >
+                  History
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
         <div
           className="relative w-full overflow-hidden rounded-2xl corner-squircle border"
           ref={setSheetContainer}
@@ -803,7 +934,10 @@ export function RecipeStudioPage({
             workflowName={workflowName}
             warnings={graphWarnings}
             onWorkflowNameChange={setWorkflowName}
-            onViewChange={setActiveView}
+            onViewChange={(view) => {
+              setFinetuneTab(view === "editor" ? "configure" : "history");
+            }}
+            hideViewTabs={true}
             onSaveRecipe={() => {
               void persistRecipe();
             }}
@@ -826,6 +960,9 @@ export function RecipeStudioPage({
                 onLoadDatasetPage={(executionId, page) => {
                   void loadExecutionDatasetPage(executionId, page);
                 }}
+                executionScope={
+                  finetuneTab === "history" ? "past" : "active"
+                }
               />
             )}
           </div>
@@ -863,6 +1000,7 @@ export function RecipeStudioPage({
         onOpenChange={setRunDialogOpen}
         kind={runDialogKind}
         onKindChange={setRunDialogKind}
+        singleRunMode
         rows={runDialogRows}
         fullRunName={fullRunName}
         onFullRunNameChange={setFullRunName}
@@ -876,12 +1014,8 @@ export function RecipeStudioPage({
         settings={runSettings}
         onSettingsChange={setRunSettings}
         loading={runDialogLoading}
-        validateLoading={validateLoading}
         validateResult={validateResult}
         errors={runErrors}
-        onValidate={() => {
-          void validateFromDialog();
-        }}
         onRun={() => {
           void runFromDialog();
         }}

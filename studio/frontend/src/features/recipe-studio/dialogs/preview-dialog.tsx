@@ -36,6 +36,8 @@ type RunDialogProps = {
   onOpenChange: (open: boolean) => void;
   kind: RecipeExecutionKind;
   onKindChange: (kind: RecipeExecutionKind) => void;
+  /** Full run only: hides test vs full, and the extra Check action. */
+  singleRunMode?: boolean;
   rows: number;
   fullRunName: string;
   onFullRunNameChange: (name: string) => void;
@@ -43,7 +45,7 @@ type RunDialogProps = {
   settings: RecipeRunSettings;
   onSettingsChange: (patch: Partial<RecipeRunSettings>) => void;
   loading: boolean;
-  validateLoading: boolean;
+  validateLoading?: boolean;
   validateResult: {
     valid: boolean;
     errors: string[];
@@ -59,7 +61,7 @@ type RunDialogProps = {
   } | null;
   errors: string[];
   onRun: () => void;
-  onValidate: () => void;
+  onValidate?: () => void;
   container?: HTMLDivElement | null;
 };
 
@@ -280,6 +282,7 @@ type RunDialogBodyProps = Omit<
 function RunDialogBody({
   kind,
   onKindChange,
+  singleRunMode = false,
   rows,
   fullRunName,
   onFullRunNameChange,
@@ -287,7 +290,7 @@ function RunDialogBody({
   settings,
   onSettingsChange,
   loading,
-  validateLoading,
+  validateLoading = false,
   validateResult,
   errors,
   onRun,
@@ -295,12 +298,14 @@ function RunDialogBody({
   onClose,
 }: RunDialogBodyProps): ReactElement {
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const kindLabel = kind === "preview" ? "Test run" : "Full run";
+  const effectiveKind: RecipeExecutionKind = singleRunMode ? "full" : kind;
+  const kindLabel =
+    effectiveKind === "preview" ? "Test run" : "Full run";
   const normalizedFullRunName = fullRunName.trim();
   const isFullRunNameMissing =
-    kind === "full" && normalizedFullRunName.length === 0;
+    effectiveKind === "full" && normalizedFullRunName.length === 0;
   const rowHint =
-    kind === "preview"
+    effectiveKind === "preview"
       ? "How many sample rows to generate for a quick check."
       : "How many rows to generate in total.";
 
@@ -332,40 +337,46 @@ function RunDialogBody({
   return (
     <>
       <DialogHeader className="space-y-2">
-        <DialogTitle>{kindLabel}</DialogTitle>
+        <DialogTitle>
+          {singleRunMode ? "Run" : kindLabel}
+        </DialogTitle>
         <p className="text-sm text-muted-foreground">
-          Choose a quick test or a full run. Advanced settings are optional.
+          {singleRunMode
+            ? "Name the run, set how many rows to generate, and start. Advanced settings are optional."
+            : "Choose a quick test or a full run. Advanced settings are optional."}
         </p>
       </DialogHeader>
 
-      <div className="grid gap-1.5">
-        <FieldLabel
-          label="Run type"
-          hint="Start with a quick check or generate the full dataset."
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant={kind === "preview" ? "default" : "outline"}
-            className="corner-squircle min-h-10 justify-center whitespace-normal px-3 text-center"
-            aria-pressed={kind === "preview"}
-            onClick={() => onKindChange("preview")}
-          >
-            Test run
-          </Button>
-          <Button
-            type="button"
-            variant={kind === "full" ? "default" : "outline"}
-            className="corner-squircle min-h-10 justify-center whitespace-normal px-3 text-center"
-            aria-pressed={kind === "full"}
-            onClick={() => onKindChange("full")}
-          >
-            Full run
-          </Button>
+      {!singleRunMode && (
+        <div className="grid gap-1.5">
+          <FieldLabel
+            label="Run type"
+            hint="Start with a quick check or generate the full dataset."
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={kind === "preview" ? "default" : "outline"}
+              className="corner-squircle min-h-10 justify-center whitespace-normal px-3 text-center"
+              aria-pressed={kind === "preview"}
+              onClick={() => onKindChange("preview")}
+            >
+              Test run
+            </Button>
+            <Button
+              type="button"
+              variant={kind === "full" ? "default" : "outline"}
+              className="corner-squircle min-h-10 justify-center whitespace-normal px-3 text-center"
+              aria-pressed={kind === "full"}
+              onClick={() => onKindChange("full")}
+            >
+              Full run
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {kind === "full" && (
+      {effectiveKind === "full" && (
         <div className="grid gap-1.5">
           <FieldLabel
             label="Run name"
@@ -428,7 +439,7 @@ function RunDialogBody({
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-3 space-y-4">
-          {kind === "full" && (
+          {effectiveKind === "full" && (
             <AdvancedSettingsSection
               title="Batching"
               description="Use batches when you want to split a larger run into smaller pieces."
@@ -506,7 +517,7 @@ function RunDialogBody({
                   )
                 }
               />
-              {kind === "full" && settings.batchEnabled && (
+              {effectiveKind === "full" && settings.batchEnabled && (
                 <>
                   <DraftInputField
                     id="run-batch-size"
@@ -666,9 +677,13 @@ function RunDialogBody({
         </div>
       )}
 
-      <ValidationResultPanel validateResult={validateResult} />
+      {!singleRunMode && (
+        <ValidationResultPanel validateResult={validateResult} />
+      )}
 
-      <DialogFooter>
+      <DialogFooter
+        className={singleRunMode ? "sm:justify-end" : undefined}
+      >
         <Button
           type="button"
           variant="outline"
@@ -678,16 +693,18 @@ function RunDialogBody({
         >
           Cancel
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onValidate}
-          disabled={loading || validateLoading}
-          className="corner-squircle border-border/70 bg-card/70"
-        >
-          <HugeiconsIcon icon={TestTube01Icon} className="size-3.5" />
-          {validateLoading ? "Checking..." : "Check recipe"}
-        </Button>
+        {!singleRunMode && onValidate && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onValidate}
+            disabled={loading || validateLoading}
+            className="corner-squircle border-border/70 bg-card/70"
+          >
+            <HugeiconsIcon icon={TestTube01Icon} className="size-3.5" />
+            {validateLoading ? "Checking..." : "Check recipe"}
+          </Button>
+        )}
         <Button
           type="button"
           onClick={onRun}
@@ -695,7 +712,11 @@ function RunDialogBody({
           className="corner-squircle"
         >
           <HugeiconsIcon icon={CookBookIcon} className="size-3.5" />
-          {loading ? "Starting..." : `Start ${kindLabel.toLowerCase()}`}
+          {loading
+            ? "Starting..."
+            : singleRunMode
+              ? "Start run"
+              : `Start ${kindLabel.toLowerCase()}`}
         </Button>
       </DialogFooter>
     </>

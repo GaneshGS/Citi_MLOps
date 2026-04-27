@@ -67,3 +67,24 @@ export interface TrainingStopResponse {
   status: "stopped" | "idle";
   message: string;
 }
+
+export interface StellarDatasetRegistryRequest {
+  train_dataset_path: string;
+  test_dataset_path: string | null;
+}
+
+export interface StellarDatasetRegistryResponse {
+  status: "ok";
+  train_dataset_id: string;
+  test_dataset_id: string | null;
+  message: string;
+}
+
+export interface StellarFinetuneRequest {
+  model_name: string;
+  model_catalog: string;
+  method: string;
+  train_dataset_id: string;
+  test_dataset_id: string | null;
+  hyperparameters: Record<string, unknown>;
+}

@@ -20,29 +20,8 @@
         "name": "llm_structured_1",
         "drop": false,
         "model_alias": "gssp_default",
-        "prompt": "Given ONLY this chunk: {{ chunk_text }} generate one answerable question, answer, and exact supporting quote from chunk. If not answerable, skip.",
         "with_trace": "none",
-        "extract_reasoning_content": false,
-        "output_format": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "question",
-            "answer",
-            "evidence_quote"
-          ],
-          "properties": {
-            "question": {
-              "type": "string"
-            },
-            "answer": {
-              "type": "string"
-            },
-            "evidence_quote": {
-              "type": "string"
-            }
-          }
-        }
+        "extract_reasoning_content": false
       }
     ],
     "processors": []
@@ -86,15 +65,6 @@
     "local_file_name": "",
     "unstructured_file_name": "",
     "gssp_enabled": true,
-    "gssp_endpoint": "https://gssp-gs-icg-tts-genaiservices-178442.apps.namicggtd013d.ecs.dyn.nsroot.net",
-    "gssp_path": "/api/gssp-generation-service/v1/generate-pass-through",
-    "gssp_auth_token": "",
-    "gssp_x_correlation_id": "",
-    "gssp_x_application_id": "",
-    "gssp_x_soeid": "",
-    "gssp_x_model_name": "",
-    "gssp_x_max_tokens": "",
-    "gssp_x_authorization_coin": "",
     "unstructured_chunk_size": "1200",
     "unstructured_chunk_overlap": "200"
   }

@@ -57,19 +57,15 @@ function buildGuidedSteps(input: {
   const seedDone =
     seed?.seed_source_type === "unstructured" &&
     (seed.unstructured_file_names?.length ?? 0) > 0;
-  const providerDone =
-    gsspMode
-      ? Boolean(seed?.gssp_endpoint?.trim()) &&
-        Boolean(seed?.gssp_auth_token?.trim()) &&
-        Boolean(seed?.gssp_x_correlation_id?.trim()) &&
-        Boolean(seed?.gssp_x_application_id?.trim()) &&
-        Boolean(seed?.gssp_x_soeid?.trim())
-      : Boolean(provider?.endpoint.trim()) &&
-        Boolean(provider?.api_key?.trim() || provider?.api_key_env?.trim()) &&
-        Boolean(modelConfig?.model.trim());
-  const promptDone =
-    Boolean(structuredLlm?.prompt.trim()) &&
-    Boolean(structuredLlm?.output_format?.trim());
+  const providerDone = gsspMode
+    ? true
+    : Boolean(provider?.endpoint.trim()) &&
+      Boolean(provider?.api_key?.trim() || provider?.api_key_env?.trim()) &&
+      Boolean(modelConfig?.model.trim());
+  const promptDone = gsspMode
+    ? true
+    : Boolean(structuredLlm?.prompt.trim()) &&
+      Boolean(structuredLlm?.output_format?.trim());
   const previewDone = Boolean(validateResult?.valid);
 
   const steps: GuidedStep[] = [
@@ -84,17 +80,19 @@ function buildGuidedSteps(input: {
       id: "provider",
       title: "Step 2: Configure GSSP connection",
       description: gsspMode
-        ? "Set endpoint, path, and auth token in the Seed block."
+        ? "GSSP URL, path, API credentials, and pass-through headers are configured on the server."
         : "Set endpoint, API key, and deployment ID for model config.",
       status: providerDone ? "done" : "pending",
       focusNodeId: seed?.id ?? provider?.id ?? modelConfig?.id,
     },
     {
       id: "prompt",
-      title: "Step 3: Review prompt + schema",
-      description: "Confirm the structured LLM prompt and JSON schema are set.",
+      title: gsspMode ? "Step 3: LLM (server-managed)" : "Step 3: Review prompt + schema",
+      description: gsspMode
+        ? "Prompt and response JSON schema for GSSP are configured on the server."
+        : "Confirm the structured LLM prompt and JSON schema are set.",
       status: promptDone ? "done" : "pending",
-      focusNodeId: structuredLlm?.id,
+      focusNodeId: gsspMode ? seed?.id : structuredLlm?.id,
     },
     {
       id: "preview",

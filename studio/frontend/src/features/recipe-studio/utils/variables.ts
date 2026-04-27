@@ -56,6 +56,9 @@ export function getAvailableVariableEntries(
     }
 
     if (config.kind === "seed") {
+      if ((config.seed_source_type ?? "hf") === "unstructured") {
+        vars.push({ name: "chunk_text", source: "seed" });
+      }
       for (const col of config.seed_columns ?? []) {
         const name = col.trim();
         if (!name) continue;

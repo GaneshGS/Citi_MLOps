@@ -66,6 +66,7 @@ from routes import (
     training_history_router,
     training_router,
 )
+from routes.gssp_dummy import router as gssp_dummy_router
 from auth import storage
 from auth.authentication import get_current_subject
 from utils.hardware import (
@@ -199,6 +200,10 @@ app.include_router(inference_router, prefix = "/v1", tags = ["openai-compat"])
 app.include_router(datasets_router, prefix = "/api/datasets", tags = ["datasets"])
 app.include_router(data_recipe_router, prefix = "/api/data-recipe", tags = ["data-recipe"])
 app.include_router(export_router, prefix = "/api/export", tags = ["export"])
+# GSSP pass-through compatible path (Citi) — in-process dummy when
+# STUDIO_USE_GSSP_DUMMY=1. Registered at the path the pipeline posts to
+# (no /api/studio prefix on the GSSP spec).
+app.include_router(gssp_dummy_router, tags = ["gssp-dummy"])
 app.include_router(
     training_history_router, prefix = "/api/train", tags = ["training-history"]
 )

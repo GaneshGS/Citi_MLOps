@@ -19,7 +19,10 @@ import { resolveImagePreview } from "../../utils/image-preview";
 import type {
   RecipeExecutionRecord,
 } from "../../execution-types";
-import { isExecutionInProgress } from "../../executions/execution-helpers";
+import {
+  filterExecutionsByScope,
+  isExecutionInProgress,
+} from "../../executions/execution-helpers";
 import { ExecutionColumnsTab } from "./execution-columns-tab";
 import { ExecutionDataTab } from "./execution-data-tab";
 import { ExecutionOverviewTab } from "./execution-overview-tab";
@@ -42,9 +45,11 @@ type ExecutionsViewProps = {
   executions: RecipeExecutionRecord[];
   selectedExecutionId: string | null;
   currentSignature: string;
-  onSelectExecution: (id: string) => void;
+  onSelectExecution: (id: string | null) => void;
   onCancelExecution: (id: string) => void;
   onLoadDatasetPage: (id: string, page: number) => void;
+  /** When set, the sidebar and details only show matching runs (Finetuning-style tabs). */
+  executionScope?: "all" | "active" | "past";
 };
 
 export function ExecutionsView({
@@ -54,6 +59,7 @@ export function ExecutionsView({
   onSelectExecution,
   onCancelExecution,
   onLoadDatasetPage,
+  executionScope = "all",
 }: ExecutionsViewProps): ReactElement {
   const formatEta = (value: number | null | undefined): string =>
     typeof value === "number" && Number.isFinite(value)
@@ -72,12 +78,66 @@ export function ExecutionsView({
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const terminalRef = useRef<HTMLDivElement | null>(null);
   const shouldStickTerminalToBottomRef = useRef(true);
+  const visibleExecutions = useMemo(
+    () => filterExecutionsByScope(executions, executionScope),
+    [executions, executionScope],
+  );
+
   const selectedExecution = useMemo(
     () =>
-      executions.find((execution) => execution.id === selectedExecutionId) ??
+      visibleExecutions.find((execution) => execution.id === selectedExecutionId) ??
       null,
-    [executions, selectedExecutionId],
+    [visibleExecutions, selectedExecutionId],
   );
+
+  useEffect(() => {
+    if (visibleExecutions.length === 0) {
+      if (selectedExecutionId !== null) {
+        onSelectExecution(null);
+      }
+      return;
+    }
+    const stillIn = visibleExecutions.some((e) => e.id === selectedExecutionId);
+    if (stillIn) {
+      return;
+    }
+    let nextId: string;
+    if (executionScope === "active") {
+      const running = visibleExecutions.find((e) =>
+        isExecutionInProgress(e.status),
+      );
+      nextId = (running ?? visibleExecutions[0])!.id;
+    } else if (executionScope === "past") {
+      nextId = visibleExecutions[0]!.id;
+    } else {
+      nextId = visibleExecutions[0]!.id;
+    }
+    onSelectExecution(nextId);
+  }, [
+    visibleExecutions,
+    selectedExecutionId,
+    executionScope,
+    onSelectExecution,
+  ]);
+
+  const sidebarTitle =
+    executionScope === "active"
+      ? "Active runs"
+      : executionScope === "past"
+        ? "Past runs"
+        : "Runs";
+  const sidebarEmptyMessage =
+    executionScope === "active"
+      ? "No active runs."
+      : executionScope === "past"
+        ? "No completed runs yet."
+        : "No runs yet.";
+  const detailEmptyMessage =
+    executionScope === "active"
+      ? "No active run. Start a preview or full run from the editor."
+      : executionScope === "past"
+        ? "No finished runs yet. Completed, failed, or cancelled runs appear here."
+        : "Select an execution.";
   const isStale = Boolean(
     selectedExecution &&
       selectedExecution.recipeSignature.length > 0 &&
@@ -365,14 +425,16 @@ export function ExecutionsView({
   return (
     <div className="flex h-full min-h-0">
       <ExecutionSidebar
-        executions={executions}
+        executions={visibleExecutions}
         selectedExecutionId={selectedExecutionId}
         onSelectExecution={onSelectExecution}
+        title={sidebarTitle}
+        emptyMessage={sidebarEmptyMessage}
       />
       <section className="min-w-0 flex-1 overflow-auto p-4">
         {!selectedExecution ? (
           <div className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
-            Select an execution.
+            {detailEmptyMessage}
           </div>
         ) : (
           <div className="space-y-4">

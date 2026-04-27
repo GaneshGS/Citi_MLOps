@@ -172,9 +172,12 @@ export function buildRecipePayload(
           }
         }
       }
-      const llmColumn = buildLlmColumn(config, errors);
+      const llmColumn = buildLlmColumn(config, errors) as Record<string, unknown>;
       if (gsspMode) {
         llmColumn.model_alias = "gssp_default";
+        // Prompt and response schema for GSSP PDF QA are applied on the server only.
+        delete llmColumn.prompt;
+        delete llmColumn.output_format;
       }
       columns.push(llmColumn);
       if (config.model_alias || gsspMode) {
@@ -396,37 +399,25 @@ export function buildRecipePayload(
   const effectiveModelProviders = [...modelProviders];
   const effectiveModelConfigs = [...modelConfigs];
   if (gsspMode) {
-    const gsspEndpoint =
-      firstSeed?.gssp_endpoint?.trim() ||
-      "https://gssp-gs-icg-tts-genaiservices-178442.apps.namicggtd013d.ecs.dyn.nsroot.net";
     const gsspPath =
-      firstSeed?.gssp_path?.trim() ||
       "/api/gssp-generation-service/v1/generate-pass-through";
     effectiveModelProviders.length = 0;
     effectiveModelConfigs.length = 0;
     effectiveModelProviders.push({
       name: "gssp_provider",
-      endpoint: gsspEndpoint,
+      // Base URL, path, auth, pass-through headers, and optional request template
+      // are applied server-side (gssp_dummy.apply_gssp_server_provider_config).
+      endpoint: "",
       // biome-ignore lint/style/useNamingConvention: api schema
       provider_type: "openai",
       // biome-ignore lint/style/useNamingConvention: api schema
-      api_key: firstSeed?.gssp_auth_token?.trim() || undefined,
+      api_key: undefined,
       // biome-ignore lint/style/useNamingConvention: api schema
       extra_body: {
-        // backend can use this metadata to build pass-through payloads
         gssp_path: gsspPath,
-        gssp_request_template: firstSeed?.gssp_request_template?.trim() || "",
       },
       // biome-ignore lint/style/useNamingConvention: api schema
-      extra_headers: {
-        "x-correlation-id": firstSeed?.gssp_x_correlation_id?.trim() || undefined,
-        "x-application-id": firstSeed?.gssp_x_application_id?.trim() || undefined,
-        "x-soeid": firstSeed?.gssp_x_soeid?.trim() || undefined,
-        "x-model-name": firstSeed?.gssp_x_model_name?.trim() || undefined,
-        "x-max-tokens": firstSeed?.gssp_x_max_tokens?.trim() || undefined,
-        "x-Authorization-Coin":
-          firstSeed?.gssp_x_authorization_coin?.trim() || undefined,
-      },
+      extra_headers: {},
     });
     effectiveModelConfigs.push({
       alias: "gssp_default",
@@ -501,70 +492,6 @@ export function buildRecipePayload(
         ...(firstSeed &&
           firstSeed.gssp_enabled !== undefined && {
             gssp_enabled: firstSeed.gssp_enabled,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_endpoint !== undefined && {
-            gssp_endpoint: firstSeed.gssp_endpoint,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_path !== undefined && {
-            gssp_path: firstSeed.gssp_path,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_auth_token !== undefined && {
-            gssp_auth_token: firstSeed.gssp_auth_token,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_correlation_id !== undefined && {
-            gssp_x_correlation_id: firstSeed.gssp_x_correlation_id,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_application_id !== undefined && {
-            gssp_x_application_id: firstSeed.gssp_x_application_id,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_soeid !== undefined && {
-            gssp_x_soeid: firstSeed.gssp_x_soeid,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_model_name !== undefined && {
-            gssp_x_model_name: firstSeed.gssp_x_model_name,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_max_tokens !== undefined && {
-            gssp_x_max_tokens: firstSeed.gssp_x_max_tokens,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_authorization_coin !== undefined && {
-            gssp_x_authorization_coin: firstSeed.gssp_x_authorization_coin,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_correlation_id !== undefined && {
-            gssp_x_correlation_id: firstSeed.gssp_x_correlation_id,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_application_id !== undefined && {
-            gssp_x_application_id: firstSeed.gssp_x_application_id,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_soeid !== undefined && {
-            gssp_x_soeid: firstSeed.gssp_x_soeid,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_model_name !== undefined && {
-            gssp_x_model_name: firstSeed.gssp_x_model_name,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_max_tokens !== undefined && {
-            gssp_x_max_tokens: firstSeed.gssp_x_max_tokens,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_x_authorization_coin !== undefined && {
-            gssp_x_authorization_coin: firstSeed.gssp_x_authorization_coin,
-          }),
-        ...(firstSeed &&
-          firstSeed.gssp_request_template !== undefined && {
-            gssp_request_template: firstSeed.gssp_request_template,
           }),
         ...(Object.keys(uiAdvancedOpenByNode).length > 0 && {
           // biome-ignore lint/style/useNamingConvention: ui schema

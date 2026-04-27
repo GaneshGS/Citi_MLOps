@@ -7,8 +7,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
+from core.data_recipe.gssp_dummy import (
+    apply_gssp_pdf_grounded_qa_llm_defaults,
+    apply_gssp_server_provider_config,
+)
 from core.data_recipe.service import (
     build_config_builder,
     create_data_designer,
@@ -103,13 +107,29 @@ def _preflight_guidance(recipe: dict[str, Any]) -> list[ValidateError]:
         model = model_config.get("model")
         provider = provider_by_name.get(provider_name)
         if isinstance(provider_name, str) and isinstance(provider, dict):
+            extra_body = provider.get("extra_body")
+            is_gssp = (
+                provider_name == "gssp_provider"
+                or str(provider.get("name") or "") == "gssp_provider"
+                or (
+                    isinstance(extra_body, dict)
+                    and isinstance(extra_body.get("gssp_path"), str)
+                    and bool(extra_body.get("gssp_path"))
+                )
+            )
             endpoint = provider.get("endpoint")
             if not isinstance(endpoint, str) or not endpoint.strip():
+                ep_hint = (
+                    "Set STUDIO_GSSP_ENDPOINT in the server environment, or use "
+                    "STUDIO_USE_GSSP_DUMMY=1 (default) to run against the in-process GSSP stand-in."
+                    if is_gssp
+                    else "Set the model provider endpoint URL."
+                )
                 errors.append(
                     ValidateError(
                         message = f"Model provider '{provider_name}' is missing an endpoint.",
                         code = "missing_provider_endpoint",
-                        hint = "Set the GSSP endpoint URL in your model provider.",
+                        hint = ep_hint,
                         field_path = "recipe.model_providers[].endpoint",
                         block_name = provider_name,
                     )
@@ -119,17 +139,22 @@ def _preflight_guidance(recipe: dict[str, Any]) -> list[ValidateError]:
             if (not isinstance(api_key, str) or not api_key.strip()) and (
                 not isinstance(api_key_env, str) or not api_key_env.strip()
             ):
+                key_hint = (
+                    "Set STUDIO_GSSP_AUTH_TOKEN or STUDIO_GSSP_AUTH_TOKEN_FILE on the Studio "
+                    "server (not in the recipe UI), or use the GSSP dummy (STUDIO_USE_GSSP_DUMMY=1) which supplies a local placeholder."
+                    if is_gssp
+                    else "Set a model provider API key or API key environment variable for this provider."
+                )
                 errors.append(
                     ValidateError(
                         message = f"Model provider '{provider_name}' is missing API credentials.",
                         code = "missing_provider_api_key",
-                        hint = "Set a GSSP API key or API key env var for this provider.",
+                        hint = key_hint,
                         field_path = "recipe.model_providers[].api_key",
                         block_name = provider_name,
                     )
                 )
             extra_headers = provider.get("extra_headers")
-            extra_body = provider.get("extra_body")
             is_gssp_provider = (
                 isinstance(extra_body, dict)
                 and isinstance(extra_body.get("gssp_path"), str)
@@ -154,8 +179,9 @@ def _preflight_guidance(recipe: dict[str, Any]) -> list[ValidateError]:
                                 ),
                                 code = code,
                                 hint = (
-                                    "Set required GSSP headers in Seed -> "
-                                    "Advanced source options."
+                                    "Set STUDIO_GSSP_X_CORRELATION_ID, "
+                                    "STUDIO_GSSP_X_APPLICATION_ID, and STUDIO_GSSP_X_SOEID "
+                                    "in the server environment (not in the Studio UI)."
                                 ),
                                 field_path = "recipe.model_providers[].extra_headers",
                                 block_name = provider_name,
@@ -230,7 +256,10 @@ def _patch_local_providers(recipe: dict[str, Any]) -> None:
 
 
 @router.post("/validate", response_model = ValidateResponse)
-def validate(payload: RecipePayload) -> ValidateResponse:
+def validate(
+    request: Request,
+    payload: RecipePayload,
+) -> ValidateResponse:
     recipe = payload.recipe
     if not recipe.get("columns"):
         return ValidateResponse(
@@ -239,6 +268,8 @@ def validate(payload: RecipePayload) -> ValidateResponse:
         )
 
     _patch_local_providers(recipe)
+    apply_gssp_server_provider_config(recipe, request = request)
+    apply_gssp_pdf_grounded_qa_llm_defaults(recipe)
 
     try:
         validate_recipe(recipe)

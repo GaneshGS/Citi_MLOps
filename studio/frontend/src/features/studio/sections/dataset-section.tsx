@@ -37,6 +37,7 @@ import {
   useTrainingConfigStore,
 } from "@/features/training";
 import { listLocalDatasets } from "@/features/training/api/datasets-api";
+import { registerStellarDatasets } from "@/features/training/api/train-api";
 import type { LocalDatasetInfo } from "@/features/training/types/datasets";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -98,6 +99,10 @@ export function DatasetSection() {
     uploadedFile,
     uploadedEvalFile,
     setUploadedEvalFile,
+    stellarTrainDatasetId,
+    stellarTestDatasetId,
+    setStellarDatasetIds,
+    clearStellarDatasetIds,
     modelType,
     datasetSliceStart,
     setDatasetSliceStart,
@@ -115,6 +120,10 @@ export function DatasetSection() {
       uploadedFile: s.uploadedFile,
       uploadedEvalFile: s.uploadedEvalFile,
       setUploadedEvalFile: s.setUploadedEvalFile,
+      stellarTrainDatasetId: s.stellarTrainDatasetId,
+      stellarTestDatasetId: s.stellarTestDatasetId,
+      setStellarDatasetIds: s.setStellarDatasetIds,
+      clearStellarDatasetIds: s.clearStellarDatasetIds,
       modelType: s.modelType,
       datasetSliceStart: s.datasetSliceStart,
       setDatasetSliceStart: s.setDatasetSliceStart,
@@ -169,11 +178,13 @@ export function DatasetSection() {
 
   function handleLocalDatasetSelect(path: string) {
     selectingRef.current = true;
+    clearStellarDatasetIds();
     selectLocalDataset(path);
   }
 
   function clearDatasetSelection() {
     selectingRef.current = true;
+    clearStellarDatasetIds();
     selectLocalDataset(null);
   }
 
@@ -262,11 +273,37 @@ export function DatasetSection() {
   const evalFileInputRef = useRef<HTMLInputElement>(null);
 
   const [isUploading, setIsUploading] = useState(false);
+  const [isRegisteringDatasets, setIsRegisteringDatasets] = useState(false);
   const [documentRedirectOpen, setDocumentRedirectOpen] = useState(false);
   const [redirectFileName, setRedirectFileName] = useState<string | null>(null);
 
   const handleUploadButtonClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleRegisterDatasets = async () => {
+    if (!uploadedFile) {
+      toast.error("Select a train dataset first");
+      return;
+    }
+    setIsRegisteringDatasets(true);
+    try {
+      const response = await registerStellarDatasets({
+        train_dataset_path: uploadedFile,
+        test_dataset_path: uploadedEvalFile,
+      });
+      setStellarDatasetIds({
+        trainDatasetId: response.train_dataset_id,
+        testDatasetId: response.test_dataset_id,
+      });
+      toast.success("Datasets registered", { description: response.message });
+    } catch (error) {
+      toast.error("Failed to register datasets", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setIsRegisteringDatasets(false);
+    }
   };
 
   const handleFileUpload = async (
@@ -301,6 +338,7 @@ export function DatasetSection() {
     }
 
     await handleFileUpload(file, selectLocalDataset, "Dataset uploaded");
+    clearStellarDatasetIds();
   };
 
   const handleEvalFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -309,6 +347,7 @@ export function DatasetSection() {
     if (!file) return;
 
     await handleFileUpload(file, setUploadedEvalFile, "Eval dataset uploaded");
+    clearStellarDatasetIds();
   };
 
   const handleOpenLearningRecipes = useCallback(() => {
@@ -759,7 +798,7 @@ export function DatasetSection() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -784,7 +823,25 @@ export function DatasetSection() {
                 <HugeiconsIcon icon={ViewIcon} className="size-3.5" />
                 View dataset
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="cursor-pointer gap-1.5"
+                disabled={!uploadedFile || isRegisteringDatasets}
+                onClick={() => {
+                  void handleRegisterDatasets();
+                }}
+              >
+                {isRegisteringDatasets ? "Registering..." : "Register IDs"}
+              </Button>
             </div>
+            {(stellarTrainDatasetId || stellarTestDatasetId) && (
+              <div className="rounded-lg border bg-muted/20 px-3.5 py-3 text-[11px] text-muted-foreground">
+                <p className="text-xs font-medium text-foreground">Stellar dataset IDs</p>
+                <p className="mt-1">Train: {stellarTrainDatasetId ?? "--"}</p>
+                <p>Test: {stellarTestDatasetId ?? "--"}</p>
+              </div>
+            )}
           </div>
           <input
             ref={fileInputRef}

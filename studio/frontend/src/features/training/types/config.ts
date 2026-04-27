@@ -38,6 +38,8 @@ export interface TrainingConfigState {
   datasetSliceEnd: string | null;
   uploadedFile: string | null;
   uploadedEvalFile: string | null;
+  stellarTrainDatasetId: string | null;
+  stellarTestDatasetId: string | null;
   epochs: number;
   contextLength: number;
   learningRate: number;
@@ -112,6 +114,11 @@ export interface TrainingConfigActions {
   setDatasetSliceEnd: (value: string | null) => void;
   setUploadedFile: (file: string | null) => void;
   setUploadedEvalFile: (file: string | null) => void;
+  setStellarDatasetIds: (ids: {
+    trainDatasetId: string | null;
+    testDatasetId: string | null;
+  }) => void;
+  clearStellarDatasetIds: () => void;
   setEpochs: (epochs: number) => void;
   setContextLength: (length: number) => void;
   setLearningRate: (rate: number) => void;

@@ -16,6 +16,10 @@ from core.data_recipe.huggingface import (
     RecipeDatasetPublishError,
     publish_recipe_dataset,
 )
+from core.data_recipe.gssp_dummy import (
+    apply_gssp_pdf_grounded_qa_llm_defaults,
+    apply_gssp_server_provider_config,
+)
 from core.data_recipe.jobs import get_job_manager
 from models.data_recipe import (
     JobCreateResponse,
@@ -216,6 +220,9 @@ def create_job(payload: RecipePayload, request: Request):
         _inject_local_providers(recipe, request)
     except ValueError as exc:
         raise HTTPException(status_code = 400, detail = str(exc)) from exc
+
+    apply_gssp_server_provider_config(recipe, request = request)
+    apply_gssp_pdf_grounded_qa_llm_defaults(recipe)
 
     mgr = get_job_manager()
     try:

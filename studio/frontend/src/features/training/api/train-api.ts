@@ -3,6 +3,9 @@
 
 import { authFetch } from "@/features/auth";
 import type {
+  StellarDatasetRegistryRequest,
+  StellarDatasetRegistryResponse,
+  StellarFinetuneRequest,
   TrainingStartRequest,
   TrainingStartResponse,
   TrainingStopResponse,
@@ -37,6 +40,28 @@ export async function startTraining(
   payload: TrainingStartRequest,
 ): Promise<TrainingStartResponse> {
   const response = await authFetch("/api/train/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return parseJson<TrainingStartResponse>(response);
+}
+
+export async function registerStellarDatasets(
+  payload: StellarDatasetRegistryRequest,
+): Promise<StellarDatasetRegistryResponse> {
+  const response = await authFetch("/api/train/stellar/datasets/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return parseJson<StellarDatasetRegistryResponse>(response);
+}
+
+export async function startStellarFinetuning(
+  payload: StellarFinetuneRequest,
+): Promise<TrainingStartResponse> {
+  const response = await authFetch("/api/train/stellar/finetune/start", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

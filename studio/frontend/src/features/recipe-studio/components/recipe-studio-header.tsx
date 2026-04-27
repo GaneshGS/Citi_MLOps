@@ -29,6 +29,8 @@ type StatusTone = "success" | "error";
 
 type RecipeStudioHeaderProps = {
   activeView: RecipeStudioView;
+  /** When set, the Editor / Runs center tabs are hidden (e.g. Finetune-style top tabs are used). */
+  hideViewTabs?: boolean;
   saveLoading: boolean;
   saveTone: StatusTone;
   savedAtLabel: string;
@@ -46,6 +48,7 @@ const STATUS_MESSAGE_CLASS: Record<StatusTone, string> = {
 
 export function RecipeStudioHeader({
   activeView,
+  hideViewTabs = false,
   saveLoading,
   saveTone,
   savedAtLabel,
@@ -128,12 +131,16 @@ export function RecipeStudioHeader({
         </div>
       </div>
       <div className="justify-self-center">
-        <Tabs value={activeView} onValueChange={handleViewValueChange}>
-          <TabsList>
-            <TabsTrigger value="editor">Editor</TabsTrigger>
-            <TabsTrigger value="executions">Runs</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {hideViewTabs ? (
+          <span className="sr-only">View switching is in the top-level tabs</span>
+        ) : (
+          <Tabs value={activeView} onValueChange={handleViewValueChange}>
+            <TabsList>
+              <TabsTrigger value="editor">Editor</TabsTrigger>
+              <TabsTrigger value="executions">Runs</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
       </div>
       <div className="flex items-center justify-self-end gap-2">
         {warnings.length > 0 && (

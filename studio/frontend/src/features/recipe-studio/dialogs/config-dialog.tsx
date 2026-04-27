@@ -3,7 +3,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import type { ReactElement } from "react";
 import { getBlockDefinitionForConfig } from "../blocks/definitions";
 import { renderBlockDialog } from "../blocks/registry";
@@ -41,13 +40,6 @@ export function ConfigDialog({
   readOnly = false,
 }: ConfigDialogProps): ReactElement {
   const blockDefinition = getBlockDefinitionForConfig(config);
-  const showDropToggle =
-    config?.kind === "sampler" ||
-    config?.kind === "llm" ||
-    config?.kind === "validator" ||
-    config?.kind === "expression" ||
-    (config?.kind === "seed" &&
-      (config.seed_source_type ?? "hf") === "unstructured");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,21 +74,6 @@ export function ConfigDialog({
             <div
               className={readOnly ? "pointer-events-none min-w-0 opacity-75" : "min-w-0"}
             >
-              {showDropToggle && (
-                <div className="mb-2 flex items-center corner-squircle justify-between gap-3 rounded-2xl border border-border/60 px-3 pt-2 pb-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">Keep out of final dataset</p>
-                    <p className="break-words text-xs text-muted-foreground">
-                      Use this step while generating, but leave it out of exported rows.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={config.drop ?? false}
-                    disabled={readOnly}
-                    onCheckedChange={(value) => onUpdate(config.id, { drop: value })}
-                  />
-                </div>
-              )}
               {renderBlockDialog(
                 config,
                 open,

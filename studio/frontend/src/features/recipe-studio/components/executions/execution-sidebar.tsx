@@ -21,24 +21,30 @@ type ExecutionSidebarProps = {
   executions: RecipeExecutionRecord[];
   selectedExecutionId: string | null;
   onSelectExecution: (id: string) => void;
+  /** Overrides the "Runs" header (e.g. Active runs / Past runs). */
+  title?: string;
+  /** Empty state when `executions` is empty. */
+  emptyMessage?: string;
 };
 
 export function ExecutionSidebar({
   executions,
   selectedExecutionId,
   onSelectExecution,
+  title = "Runs",
+  emptyMessage = "No runs yet.",
 }: ExecutionSidebarProps): ReactElement {
   return (
     <aside className="w-72 shrink-0 border-r border-border/60 bg-card/20">
       <div className="flex items-center justify-between  border-border/60 px-3 py-2">
         <p className="text-xs font-semibold uppercase text-muted-foreground">
-          Runs
+          {title}
         </p>
       </div>
       <div className="h-[calc(100%-45px)] space-y-2 overflow-auto p-2">
         {executions.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/60 p-3 text-xs text-muted-foreground">
-            No runs yet.
+            {emptyMessage}
           </div>
         ) : (
           executions.map((execution) => {
